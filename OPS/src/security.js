@@ -17,7 +17,7 @@ export async function sha256(value) {
   return b64url(new Uint8Array(await crypto.subtle.digest('SHA-256', data)));
 }
 
-export async function hashPassword(password, salt = randomToken(16), iterations = 210000) {
+export async function hashPassword(password, salt = randomToken(16), iterations = 100000) {
   const key = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveBits']);
   const bits = await crypto.subtle.deriveBits({
     name: 'PBKDF2',
@@ -30,7 +30,7 @@ export async function hashPassword(password, salt = randomToken(16), iterations 
 
 export async function verifyPassword(password, row) {
   if (!row?.password_hash || !row?.password_salt) return false;
-  const { hash } = await hashPassword(password, row.password_salt, Number(row.password_iterations || 210000));
+  const { hash } = await hashPassword(password, row.password_salt, Number(row.password_iterations || 100000));
   return timingSafeEqual(hash, row.password_hash);
 }
 

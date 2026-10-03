@@ -41,3 +41,9 @@ Nếu muốn quản lý migration thủ công, có thể chạy `npm run db:migr
 3. Khởi tạo Super Admin.
 4. Vào **Tích hợp** để kiểm tra 7 D1 + R2 thật.
 5. Chỉ khi các binding đều xanh mới coi integration production sẵn sàng.
+
+
+## V3 — Bootstrap 500 fix
+Cloudflare Workers/Pages Functions giới hạn PBKDF2 ở tối đa 100.000 vòng.
+Bản V2 dùng 210.000 vòng nên `POST /api/setup/bootstrap` có thể trả HTTP 500 ngay tại bước tạo hash mật khẩu.
+V3 dùng 100.000 vòng để tương thích runtime Cloudflare và bổ sung lỗi riêng cho bước hash / ghi D1.

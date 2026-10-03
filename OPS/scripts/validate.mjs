@@ -26,7 +26,7 @@ check('source data layer has no DELETE', !/\bDELETE\s+FROM\b/i.test(data));
 check('source data layer has no DROP/ALTER', !/\b(DROP|ALTER)\s+(TABLE|DATABASE)\b/i.test(data));
 
 const sec=read('src/security.js');
-check('PBKDF2 password hashing', /PBKDF2/.test(sec)&&/210000/.test(read('migrations/0001_ops_core.sql')));
+check('PBKDF2 password hashing', /PBKDF2/.test(sec)&&/100000/.test(read('migrations/0001_ops_core.sql')));
 check('strict session cookie', /HttpOnly; Secure; SameSite=Strict/.test(sec));
 check('CSP present', /content-security-policy/.test(sec));
 const idx=read('src/index.js');

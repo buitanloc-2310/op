@@ -109,12 +109,23 @@ async function bootstrap(request, env) {
   const fullName = sanitizeText(body.full_name, 120);
   const password = String(body.password || '');
   if (!email.includes('@') || fullName.length < 2 || password.length < 12) return json({ ok:false, error:'INVALID_BOOTSTRAP_DATA' }, 400);
-  const hp = await hashPassword(password);
+  let hp;
+  try {
+    hp = await hashPassword(password);
+  } catch (e) {
+    console.error('OPS_PASSWORD_HASH_FAILED', e?.stack || e);
+    throw Object.assign(new Error('PASSWORD_HASH_FAILED'), { status: 500 });
+  }
   const id = uuid(); const now = nowIso();
-  await env.OPS_DB.prepare(`INSERT INTO ops_users
+  try {
+    await env.OPS_DB.prepare(`INSERT INTO ops_users
     (id,email,full_name,role,capabilities_json,password_hash,password_salt,password_iterations,status,created_at,updated_at)
     VALUES (?,?,?,?,?,?,?,?,?,?,?)`)
     .bind(id,email,fullName,'super_admin','[]',hp.hash,hp.salt,hp.iterations,'active',now,now).run();
+  } catch (e) {
+    console.error('OPS_BOOTSTRAP_INSERT_FAILED', e?.stack || e);
+    throw Object.assign(new Error('BOOTSTRAP_DB_WRITE_FAILED'), { status: 500 });
+  }
   await audit(env, request, {id,email}, 'ops.bootstrap', 'user', id, { role:'super_admin' });
   return json({ ok:true, user:{id,email,full_name:fullName,role:'super_admin'} }, 201);
 }
@@ -177,7 +188,10 @@ function friendlyError(e) {
   const known = {
     AUTH_REQUIRED:'Bạn cần đăng nhập.', FORBIDDEN:'Bạn không có quyền thực hiện thao tác này.',
     CSRF_INVALID:'Phiên bảo mật không hợp lệ. Vui lòng tải lại trang.', BAD_ORIGIN:'Yêu cầu không hợp lệ.',
-    INVALID_JSON:'Dữ liệu gửi lên không hợp lệ.', PAYLOAD_TOO_LARGE:'Dữ liệu gửi lên quá lớn.'
+    INVALID_JSON:'Dữ liệu gửi lên không hợp lệ.', PAYLOAD_TOO_LARGE:'Dữ liệu gửi lên quá lớn.',
+    PASSWORD_HASH_FAILED:'Không thể tạo thông tin đăng nhập trên môi trường hiện tại.',
+    BOOTSTRAP_DB_WRITE_FAILED:'Không thể ghi tài khoản quản trị vào cơ sở dữ liệu.',
+    OPS_DB_BINDING_MISSING:'OPS_DB chưa được cấu hình cho môi trường này.'
   };
   return { code, message:known[code] || 'Không thể hoàn tất yêu cầu lúc này.' };
 }
@@ -285,7 +299,7 @@ async function scheduledSnapshot(env) {
 async function api(request, env) {
   const url=new URL(request.url), path=url.pathname;
   if (path!=='/api/health') await ensureOpsSchema(env);
-  if (path==='/api/health' && request.method==='GET') return json({ok:true,service:'sky-first-ops',time:nowIso(),version:'1.0.0'});
+  if (path==='/api/health' && request.method==='GET') return json({ok:true,service:'sky-first-ops',time:nowIso(),version:'1.1.1'});
   if (path==='/api/setup/status' && request.method==='GET') return json({ok:true,...await setupStatus(env)});
   if (path==='/api/setup/bootstrap' && request.method==='POST') return bootstrap(request,env);
   if (path==='/api/auth/login' && request.method==='POST') return login(request,env);
