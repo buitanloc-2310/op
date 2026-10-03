@@ -1,77 +1,43 @@
-# Trung tâm Điều hành Sky First (OPS)
+# Trung tâm Điều hành Sky First — Pages V2
 
-Domain dự kiến: `https://ops.skyfirst.io.vn`
+Bản này được sửa riêng cho **Cloudflare Pages + Pages Functions**.
 
-OPS là control plane của hệ sinh thái Sky First: tổng hợp dữ liệu, capability, cảnh báo, search, audit, security, incident và report. Dữ liệu nghiệp vụ gốc vẫn thuộc từng hệ thống chuyên trách.
+## Cloudflare Pages
+- Root directory: để trống nếu repo chứa trực tiếp các file của gói này.
+- Build command: `npm run build`
+- Build output directory: `public`
+- Framework preset: None
+- Production branch: `main`
 
-## 8 hệ thống đã đăng ký
-
-1. SLC — `slc.skyfirst.io.vn`
-2. Exam — `exam.skyfirst.io.vn`
-3. Member — `member.skyfirst.io.vn`
-4. TNV — `tnv.skyfirst.io.vn`
-5. CTT — `ctt.skyfirst.io.vn`
-6. Website — `skyfirst.io.vn`
-7. SFEC — `sfec.skyfirst.io.vn`
-8. Mail — `mail.skyfirst.io.vn`
-
-Exam không có D1 riêng; runtime Exam dùng API/dữ liệu kỳ thi do SLC sở hữu.
-
-## Nguyên tắc an toàn
-
-- 7 D1 nguồn chỉ được đọc trong `src/data.js` bằng câu lệnh `SELECT`.
-- Không có lệnh ghi vào D1 nguồn trong OPS.
-- Thao tác nghiệp vụ nhạy cảm được deep-link về hệ thống nguồn.
-- OPS chỉ ghi vào D1 `ops` và R2 bucket `ops`.
-- Mọi API OPS đều kiểm tra session + capability; API ghi yêu cầu CSRF.
-- Mật khẩu dùng PBKDF2-SHA256 210.000 vòng.
-- Session cookie HttpOnly + Secure + SameSite=Strict.
-- Super Admin thấy toàn bộ catalog; các role khác chỉ nhận module có capability tương ứng.
-
-## Khởi tạo
-
-```bash
-npm install
-npx wrangler secret put SETUP_SECRET
-npm run db:migrate
-npm run validate
-npm run deploy
-```
-
-Sau deploy, truy cập `ops.skyfirst.io.vn`. Lần đầu giao diện sẽ yêu cầu `SETUP_SECRET`, họ tên, email và mật khẩu để tạo Super Admin đầu tiên. Khi tài khoản đầu tiên đã tồn tại, endpoint bootstrap tự khóa.
+`public/index.html` là trang gốc. API chạy qua `functions/api/[[path]].js`.
 
 ## Bindings
-
+Wrangler đã khai báo:
 - OPS_DB → D1 `ops`
 - OPS_R2 → R2 `ops`
-- SLC_DB → `skyfirsthoctap`
-- MEMBER_DB → `tk`
-- TNV_DB → `tnv-sfec`
-- CTT_DB → `sfn-app-db`
-- WEB_DB → `wed`
-- SFEC_DB → `sfec-app-db`
-- MAIL_DB → `sky-first-mail`
+- SLC_DB, MEMBER_DB, TNV_DB, CTT_DB, WEB_DB, SFEC_DB, MAIL_DB → 7 D1 nguồn
 
-Tất cả D1 nguồn phải nằm trong cùng Cloudflare account với Worker OPS để binding hoạt động.
+Exam không có D1 riêng; dữ liệu Exam thuộc SLC.
 
-## Role mặc định
+## Secret bắt buộc
+Tạo biến mã hóa `SETUP_SECRET` trong Cloudflare Pages trước lần khởi tạo đầu tiên.
+Không ghi secret trực tiếp vào GitHub.
 
-- `super_admin` — toàn bộ capability.
-- `executive` — xem toàn hệ sinh thái, report/search, không ghi nghiệp vụ nguồn.
-- `system_admin` — health/security/audit/integration và system operations.
-- `education_admin` — SLC/Exam và phần giáo dục liên quan.
-- `hr_admin` — Member/TNV và phần nhân sự/tuyển dụng.
-- `communications_admin` — Website/CMS/media.
-- `auditor` — read-only + audit/security.
-- `viewer` — overview + health tối thiểu.
+## Khởi tạo D1
+Bản V2 có cơ chế tạo schema Ops lần đầu bằng `CREATE TABLE IF NOT EXISTS`, đồng thời vẫn giữ migration `0001_ops_core.sql`.
+Nếu muốn quản lý migration thủ công, có thể chạy `npm run db:migrate`.
 
-Có thể bổ sung capability riêng cho từng tài khoản bằng `capabilities_json`.
+## An toàn
+- 7 D1 nguồn chỉ SELECT.
+- Ops chỉ ghi vào OPS_DB và OPS_R2.
+- API ghi có CSRF.
+- Session cookie HttpOnly + Secure + SameSite=Strict.
+- Password PBKDF2-SHA256.
+- Super Admin thấy toàn bộ Capability Catalog; role khác lọc ở server.
 
-## Chạy kiểm tra
-
-```bash
-npm run check
-npm run validate
-```
-
-Validator kiểm tra đủ 8 services, 7 D1 nguồn + D1/R2 Ops, security primitives, migration, permission behavior và đảm bảo data layer không có SQL mutation đối với source databases.
+## Kiểm tra sau deploy
+1. Mở `/` phải hiện giao diện, không 404.
+2. Mở `/api/health` phải trả JSON `ok:true`.
+3. Khởi tạo Super Admin.
+4. Vào **Tích hợp** để kiểm tra 7 D1 + R2 thật.
+5. Chỉ khi các binding đều xanh mới coi integration production sẵn sàng.

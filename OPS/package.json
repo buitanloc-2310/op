@@ -1,11 +1,12 @@
 {
   "name": "sky-first-operations-center",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev",
-    "deploy": "wrangler deploy",
+    "build": "npm run validate",
+    "dev": "wrangler pages dev public",
+    "deploy": "wrangler pages deploy public",
     "db:migrate": "wrangler d1 migrations apply ops --remote",
     "db:migrate:local": "wrangler d1 migrations apply ops --local",
     "check": "node --check src/index.js && node --check src/security.js && node --check src/data.js && node --check src/catalog.js && node --check public/app.js",

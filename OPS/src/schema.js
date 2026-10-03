@@ -1,0 +1,21 @@
+export const CORE_SCHEMA_STATEMENTS = [
+  "CREATE TABLE IF NOT EXISTS ops_users (\n  id TEXT PRIMARY KEY,\n  email TEXT NOT NULL UNIQUE COLLATE NOCASE,\n  full_name TEXT NOT NULL,\n  role TEXT NOT NULL DEFAULT 'viewer',\n  capabilities_json TEXT NOT NULL DEFAULT '[]',\n  password_hash TEXT NOT NULL,\n  password_salt TEXT NOT NULL,\n  password_iterations INTEGER NOT NULL DEFAULT 210000,\n  status TEXT NOT NULL DEFAULT 'active',\n  must_change_password INTEGER NOT NULL DEFAULT 0,\n  created_at TEXT NOT NULL,\n  updated_at TEXT NOT NULL,\n  last_login_at TEXT\n);",
+  "CREATE TABLE IF NOT EXISTS ops_sessions (\n  id TEXT PRIMARY KEY,\n  user_id TEXT NOT NULL,\n  token_hash TEXT NOT NULL UNIQUE,\n  csrf_token TEXT NOT NULL,\n  expires_at TEXT NOT NULL,\n  created_at TEXT NOT NULL,\n  last_seen_at TEXT NOT NULL,\n  user_agent TEXT,\n  ip_hash TEXT,\n  FOREIGN KEY(user_id) REFERENCES ops_users(id) ON DELETE CASCADE\n);",
+  "CREATE INDEX IF NOT EXISTS idx_ops_sessions_user ON ops_sessions(user_id);",
+  "CREATE INDEX IF NOT EXISTS idx_ops_sessions_expires ON ops_sessions(expires_at);",
+  "CREATE TABLE IF NOT EXISTS ops_login_attempts (\n  key TEXT PRIMARY KEY,\n  count INTEGER NOT NULL DEFAULT 0,\n  window_started_at TEXT NOT NULL,\n  blocked_until TEXT\n);",
+  "CREATE TABLE IF NOT EXISTS ops_audit_logs (\n  id TEXT PRIMARY KEY,\n  actor_user_id TEXT,\n  actor_email TEXT,\n  action TEXT NOT NULL,\n  target_type TEXT,\n  target_id TEXT,\n  metadata_json TEXT NOT NULL DEFAULT '{}',\n  ip_hash TEXT,\n  created_at TEXT NOT NULL\n);",
+  "CREATE INDEX IF NOT EXISTS idx_ops_audit_created ON ops_audit_logs(created_at DESC);",
+  "CREATE INDEX IF NOT EXISTS idx_ops_audit_actor ON ops_audit_logs(actor_user_id, created_at DESC);",
+  "CREATE TABLE IF NOT EXISTS ops_incidents (\n  id TEXT PRIMARY KEY,\n  title TEXT NOT NULL,\n  severity TEXT NOT NULL DEFAULT 'medium',\n  status TEXT NOT NULL DEFAULT 'open',\n  service_id TEXT,\n  description TEXT,\n  owner_user_id TEXT,\n  started_at TEXT NOT NULL,\n  resolved_at TEXT,\n  created_by TEXT,\n  created_at TEXT NOT NULL,\n  updated_at TEXT NOT NULL\n);",
+  "CREATE INDEX IF NOT EXISTS idx_ops_incidents_status ON ops_incidents(status, created_at DESC);",
+  "CREATE TABLE IF NOT EXISTS ops_alerts (\n  id TEXT PRIMARY KEY,\n  source TEXT NOT NULL,\n  alert_key TEXT,\n  severity TEXT NOT NULL DEFAULT 'info',\n  title TEXT NOT NULL,\n  detail TEXT,\n  status TEXT NOT NULL DEFAULT 'open',\n  acknowledged_by TEXT,\n  acknowledged_at TEXT,\n  created_at TEXT NOT NULL,\n  updated_at TEXT NOT NULL\n);",
+  "CREATE UNIQUE INDEX IF NOT EXISTS idx_ops_alert_key ON ops_alerts(source, alert_key) WHERE alert_key IS NOT NULL;",
+  "CREATE TABLE IF NOT EXISTS ops_kpi_snapshots (\n  id TEXT PRIMARY KEY,\n  captured_at TEXT NOT NULL,\n  payload_json TEXT NOT NULL,\n  created_at TEXT NOT NULL\n);",
+  "CREATE INDEX IF NOT EXISTS idx_ops_kpi_time ON ops_kpi_snapshots(captured_at DESC);",
+  "CREATE TABLE IF NOT EXISTS ops_identity_links (\n  id TEXT PRIMARY KEY,\n  canonical_key TEXT NOT NULL,\n  source_system TEXT NOT NULL,\n  source_id TEXT NOT NULL,\n  email_normalized TEXT,\n  note TEXT,\n  created_at TEXT NOT NULL,\n  updated_at TEXT NOT NULL,\n  UNIQUE(source_system, source_id)\n);",
+  "CREATE INDEX IF NOT EXISTS idx_ops_identity_key ON ops_identity_links(canonical_key);",
+  "CREATE INDEX IF NOT EXISTS idx_ops_identity_email ON ops_identity_links(email_normalized);",
+  "CREATE TABLE IF NOT EXISTS ops_automation_rules (\n  id TEXT PRIMARY KEY,\n  name TEXT NOT NULL,\n  enabled INTEGER NOT NULL DEFAULT 1,\n  trigger_type TEXT NOT NULL,\n  config_json TEXT NOT NULL DEFAULT '{}',\n  created_by TEXT,\n  created_at TEXT NOT NULL,\n  updated_at TEXT NOT NULL\n);",
+  "CREATE TABLE IF NOT EXISTS ops_settings (\n  key TEXT PRIMARY KEY,\n  value_json TEXT NOT NULL,\n  updated_by TEXT,\n  updated_at TEXT NOT NULL\n);"
+];

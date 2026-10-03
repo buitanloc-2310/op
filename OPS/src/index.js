@@ -1,5 +1,6 @@
 import { SERVICES, MODULES, ROLE_CAPABILITIES, can, userCapabilities, visibleCatalog } from './catalog.js';
 import { collectOverview, collectHealth, collectPending, globalSearch, collectSecurity, collectDataQuality, safeAll } from './data.js';
+import { CORE_SCHEMA_STATEMENTS } from './schema.js';
 import {
   randomToken, sha256, hashPassword, verifyPassword, parseCookies, sessionCookie, clearSessionCookie,
   json, readJson, ipHash, nowIso, addDaysIso, requireSameOrigin, sanitizeText, normalizeEmail, withHeaders
@@ -7,6 +8,39 @@ import {
 
 const SESSION_COOKIE = 'ops_session';
 const VALID_ROLES = Object.keys(ROLE_CAPABILITIES);
+
+let schemaReady = false;
+async function ensureOpsSchema(env) {
+  if (schemaReady) return;
+  if (!env?.OPS_DB) throw Object.assign(new Error('OPS_DB_BINDING_MISSING'), { status: 503 });
+  const prepared = CORE_SCHEMA_STATEMENTS.map(sql => env.OPS_DB.prepare(sql));
+  if (prepared.length) await env.OPS_DB.batch(prepared);
+  schemaReady = true;
+}
+
+async function sourceReadiness(env) {
+  const dbs = [
+    ['OPS_DB','ops'],['SLC_DB','slc'],['MEMBER_DB','member'],['TNV_DB','tnv'],
+    ['CTT_DB','ctt'],['WEB_DB','web'],['SFEC_DB','sfec'],['MAIL_DB','mail']
+  ];
+  const databases = [];
+  for (const [bindingName, service] of dbs) {
+    const db = env?.[bindingName];
+    if (!db) { databases.push({ binding:bindingName, service, ok:false, error:'BINDING_MISSING' }); continue; }
+    try {
+      const row = await db.prepare('SELECT 1 AS ok').first();
+      databases.push({ binding:bindingName, service, ok:Number(row?.ok||0)===1, error:null });
+    } catch (e) {
+      databases.push({ binding:bindingName, service, ok:false, error:String(e?.message||e).slice(0,160) });
+    }
+  }
+  let r2 = { binding:'OPS_R2', ok:Boolean(env?.OPS_R2), error: env?.OPS_R2 ? null : 'BINDING_MISSING' };
+  if (env?.OPS_R2) {
+    try { await env.OPS_R2.list({ limit:1 }); }
+    catch (e) { r2 = { binding:'OPS_R2', ok:false, error:String(e?.message||e).slice(0,160) }; }
+  }
+  return { databases, r2, ready: databases.every(x=>x.ok) && r2.ok };
+}
 
 function routeMatch(path, prefix) { return path === prefix || path.startsWith(prefix + '/'); }
 function uuid() { return crypto.randomUUID(); }
@@ -59,11 +93,13 @@ function requireCsrf(request, user) {
 }
 
 async function setupStatus(env) {
+  await ensureOpsSchema(env);
   const row = await env.OPS_DB.prepare(`SELECT COUNT(*) AS n FROM ops_users`).first();
   return { initialized: Number(row?.n || 0) > 0 };
 }
 
 async function bootstrap(request, env) {
+  await ensureOpsSchema(env);
   if (!env.SETUP_SECRET) return json({ ok:false, error:'SETUP_DISABLED' }, 403);
   if ((request.headers.get('x-setup-secret') || '') !== env.SETUP_SECRET) return json({ ok:false, error:'SETUP_SECRET_INVALID' }, 403);
   const status = await setupStatus(env);
@@ -103,6 +139,7 @@ async function recordLoginFailure(env, key) {
 }
 
 async function login(request, env) {
+  await ensureOpsSchema(env);
   const body = await readJson(request);
   const email = normalizeEmail(body.email);
   const password = String(body.password || '');
@@ -247,6 +284,7 @@ async function scheduledSnapshot(env) {
 
 async function api(request, env) {
   const url=new URL(request.url), path=url.pathname;
+  if (path!=='/api/health') await ensureOpsSchema(env);
   if (path==='/api/health' && request.method==='GET') return json({ok:true,service:'sky-first-ops',time:nowIso(),version:'1.0.0'});
   if (path==='/api/setup/status' && request.method==='GET') return json({ok:true,...await setupStatus(env)});
   if (path==='/api/setup/bootstrap' && request.method==='POST') return bootstrap(request,env);
@@ -275,6 +313,10 @@ async function api(request, env) {
   if (path==='/api/reports/snapshot' && request.method==='POST') return reportSnapshot(request,env,user);
   if (path==='/api/reports/snapshots' && request.method==='GET') {
     requireCap(user,'reports.view'); const r=await safeAll(env.OPS_DB,`SELECT id,captured_at,created_at FROM ops_kpi_snapshots ORDER BY captured_at DESC LIMIT 120`); return json({ok:true,items:r.data});
+  }
+  if (path==='/api/system/readiness' && request.method==='GET') {
+    requireCap(user,'ops.integrations.view');
+    return json({ok:true,data:await sourceReadiness(env)});
   }
   if (path==='/api/system/integrations' && request.method==='GET') {
     requireCap(user,'ops.integrations.view');
