@@ -1,0 +1,1505 @@
+{
+  "generated_at": "2026-10-03",
+  "services": [
+    {
+      "id": "slc",
+      "name": "Trung tâm Học tập số",
+      "short": "SLC",
+      "url": "https://slc.skyfirst.io.vn",
+      "health": "https://slc.skyfirst.io.vn/api/health",
+      "color": "#0d63c9"
+    },
+    {
+      "id": "exam",
+      "name": "Trung tâm Dự thi",
+      "short": "Exam",
+      "url": "https://exam.skyfirst.io.vn",
+      "health": "https://exam.skyfirst.io.vn/health",
+      "color": "#5b5bd6"
+    },
+    {
+      "id": "member",
+      "name": "Trung tâm Thành viên số",
+      "short": "Member",
+      "url": "https://member.skyfirst.io.vn",
+      "health": "https://member.skyfirst.io.vn/",
+      "color": "#0a8f73"
+    },
+    {
+      "id": "tnv",
+      "name": "Trung tâm Tình nguyện viên",
+      "short": "TNV",
+      "url": "https://tnv.skyfirst.io.vn",
+      "health": "https://tnv.skyfirst.io.vn/api/status",
+      "color": "#e07917"
+    },
+    {
+      "id": "ctt",
+      "name": "Cổng Thông tin SFN",
+      "short": "CTT",
+      "url": "https://ctt.skyfirst.io.vn",
+      "health": "https://ctt.skyfirst.io.vn/api/health",
+      "color": "#1363a7"
+    },
+    {
+      "id": "web",
+      "name": "Website chính Sky First",
+      "short": "Website",
+      "url": "https://skyfirst.io.vn",
+      "health": "https://skyfirst.io.vn/",
+      "color": "#334155"
+    },
+    {
+      "id": "sfec",
+      "name": "The Sky First English Club",
+      "short": "SFEC",
+      "url": "https://sfec.skyfirst.io.vn",
+      "health": "https://sfec.skyfirst.io.vn/api/health",
+      "color": "#147a9c"
+    },
+    {
+      "id": "mail",
+      "name": "Sky First Mail",
+      "short": "Mail",
+      "url": "https://mail.skyfirst.io.vn",
+      "health": "https://mail.skyfirst.io.vn/api/health",
+      "color": "#8b5cf6"
+    }
+  ],
+  "modules": [
+    {
+      "id": "slc.accounts",
+      "system": "slc",
+      "name": "Tài khoản & hồ sơ",
+      "description": "Hồ sơ cá nhân, mật khẩu, avatar, phiên đăng nhập, yêu cầu cấp tài khoản.",
+      "category": "Tài khoản",
+      "view_cap": "slc.accounts.view",
+      "manage_cap": "slc.accounts.manage",
+      "path": "#account"
+    },
+    {
+      "id": "slc.organizations",
+      "system": "slc",
+      "name": "Tổ chức & gói quyền",
+      "description": "Tổ chức, thành viên tổ chức, branding, subscription, quota và entitlement.",
+      "category": "Tổ chức",
+      "view_cap": "slc.organizations.view",
+      "manage_cap": "slc.organizations.manage",
+      "path": "#organizations"
+    },
+    {
+      "id": "slc.users",
+      "system": "slc",
+      "name": "Người dùng & phân quyền",
+      "description": "Tạo tài khoản, tạo hàng loạt, trạng thái tài khoản, vai trò và quyền mở rộng.",
+      "category": "Nhân sự",
+      "view_cap": "slc.users.view",
+      "manage_cap": "slc.users.manage",
+      "path": "#admin-users"
+    },
+    {
+      "id": "slc.classes",
+      "system": "slc",
+      "name": "Lớp học",
+      "description": "Tạo lớp, hồ sơ lớp, thành viên, mã tham gia, quyền trong lớp và trạng thái lớp.",
+      "category": "Giáo dục",
+      "view_cap": "slc.classes.view",
+      "manage_cap": "slc.classes.manage",
+      "path": "#classes"
+    },
+    {
+      "id": "slc.materials",
+      "system": "slc",
+      "name": "Học liệu & tài nguyên",
+      "description": "Học liệu, thư mục tài nguyên, file, bài học và learning units.",
+      "category": "Giáo dục",
+      "view_cap": "slc.materials.view",
+      "manage_cap": "slc.materials.manage",
+      "path": "#resources"
+    },
+    {
+      "id": "slc.assignments",
+      "system": "slc",
+      "name": "Bài tập & bài nộp",
+      "description": "Bài tập, deadline, bài nộp, tệp đính kèm, chấm và phản hồi.",
+      "category": "Giáo dục",
+      "view_cap": "slc.assignments.view",
+      "manage_cap": "slc.assignments.manage",
+      "path": "#assignments"
+    },
+    {
+      "id": "slc.gradebook",
+      "system": "slc",
+      "name": "Sổ điểm",
+      "description": "Nhóm điểm, trọng số, điểm bài tập, thay đổi điểm và tổng hợp kết quả.",
+      "category": "Giáo dục",
+      "view_cap": "slc.gradebook.view",
+      "manage_cap": "slc.gradebook.manage",
+      "path": "#gradebook"
+    },
+    {
+      "id": "slc.attendance",
+      "system": "slc",
+      "name": "Điểm danh",
+      "description": "Phiên điểm danh, bản ghi điểm danh, ghi chú và lịch sử.",
+      "category": "Giáo dục",
+      "view_cap": "slc.attendance.view",
+      "manage_cap": "slc.attendance.manage",
+      "path": "#attendance"
+    },
+    {
+      "id": "slc.calendar",
+      "system": "slc",
+      "name": "Lịch lớp & lịch hệ thống",
+      "description": "Sự kiện lớp, lịch học, lịch thi và lịch điều hành liên quan.",
+      "category": "Giáo dục",
+      "view_cap": "slc.calendar.view",
+      "manage_cap": "slc.calendar.manage",
+      "path": "#calendar"
+    },
+    {
+      "id": "slc.progress",
+      "system": "slc",
+      "name": "Tiến độ học tập",
+      "description": "Tiến độ bài học, mức hoàn thành, lesson progress và analytics học tập.",
+      "category": "Giáo dục",
+      "view_cap": "slc.progress.view",
+      "manage_cap": "slc.progress.manage",
+      "path": "#progress"
+    },
+    {
+      "id": "slc.discussion",
+      "system": "slc",
+      "name": "Thảo luận lớp",
+      "description": "Bài đăng, tin nhắn lớp và tương tác học tập.",
+      "category": "Giáo dục",
+      "view_cap": "slc.discussion.view",
+      "manage_cap": "slc.discussion.manage",
+      "path": "#discussion"
+    },
+    {
+      "id": "slc.live",
+      "system": "slc",
+      "name": "Live Classroom",
+      "description": "Phòng học trực tuyến, waiting room, attendance live, poll, raise hand, resource và realtime.",
+      "category": "Live",
+      "view_cap": "slc.live.view",
+      "manage_cap": "slc.live.manage",
+      "path": "#live"
+    },
+    {
+      "id": "slc.assessment",
+      "system": "slc",
+      "name": "Assessment Center",
+      "description": "Tạo kỳ thi, cấu hình, lịch thi, publish, giám sát, chấm và kết quả.",
+      "category": "Kỳ thi",
+      "view_cap": "slc.assessment.view",
+      "manage_cap": "slc.assessment.manage",
+      "path": "#assessment-center"
+    },
+    {
+      "id": "slc.questionbank",
+      "system": "slc",
+      "name": "Ngân hàng câu hỏi",
+      "description": "Question bank, section, competency, import và quản trị câu hỏi.",
+      "category": "Kỳ thi",
+      "view_cap": "slc.questionbank.view",
+      "manage_cap": "slc.questionbank.manage",
+      "path": "#question-bank"
+    },
+    {
+      "id": "slc.examops",
+      "system": "slc",
+      "name": "Điều hành kỳ thi",
+      "description": "Attempt, guest attempt, launch token, integrity, receipt, appeal và audit kỳ thi.",
+      "category": "Kỳ thi",
+      "view_cap": "slc.examops.view",
+      "manage_cap": "slc.examops.manage",
+      "path": "#exam-center"
+    },
+    {
+      "id": "slc.certificates",
+      "system": "slc",
+      "name": "Chứng nhận",
+      "description": "Cấp, quản lý và tra cứu chứng nhận liên quan học tập.",
+      "category": "Chứng nhận",
+      "view_cap": "slc.certificates.view",
+      "manage_cap": "slc.certificates.manage",
+      "path": "#certificates"
+    },
+    {
+      "id": "slc.notifications",
+      "system": "slc",
+      "name": "Thông báo",
+      "description": "Notification center, trạng thái đọc và liên kết thông báo.",
+      "category": "Giao tiếp",
+      "view_cap": "slc.notifications.view",
+      "manage_cap": "slc.notifications.manage",
+      "path": "#notifications"
+    },
+    {
+      "id": "slc.support",
+      "system": "slc",
+      "name": "Hỗ trợ",
+      "description": "Ticket hỗ trợ, phân công, trao đổi và trạng thái xử lý.",
+      "category": "Hỗ trợ",
+      "view_cap": "slc.support.view",
+      "manage_cap": "slc.support.manage",
+      "path": "#support"
+    },
+    {
+      "id": "slc.files",
+      "system": "slc",
+      "name": "File & lưu trữ",
+      "description": "File, R2, quota và resource usage.",
+      "category": "Hệ thống",
+      "view_cap": "slc.files.view",
+      "manage_cap": "slc.files.manage",
+      "path": "#files"
+    },
+    {
+      "id": "slc.search",
+      "system": "slc",
+      "name": "Tìm kiếm",
+      "description": "Tìm kiếm nội dung và dữ liệu trong nền tảng.",
+      "category": "Hệ thống",
+      "view_cap": "slc.search.view",
+      "manage_cap": null,
+      "path": "#search"
+    },
+    {
+      "id": "slc.analytics",
+      "system": "slc",
+      "name": "Analytics & KPI",
+      "description": "Overview, analytics v39, usage và hoạt động nền tảng.",
+      "category": "Điều hành",
+      "view_cap": "slc.analytics.view",
+      "manage_cap": "slc.analytics.manage",
+      "path": "#admin-analytics"
+    },
+    {
+      "id": "slc.automation",
+      "system": "slc",
+      "name": "Tự động hóa",
+      "description": "Automation rules, automation runs và tác vụ định kỳ.",
+      "category": "Điều hành",
+      "view_cap": "slc.automation.view",
+      "manage_cap": "slc.automation.manage",
+      "path": "#admin-automations"
+    },
+    {
+      "id": "slc.audit",
+      "system": "slc",
+      "name": "Audit & hoạt động quản trị",
+      "description": "Audit log, admin activity, assessment audit và platform audit.",
+      "category": "Bảo mật",
+      "view_cap": "slc.audit.view",
+      "manage_cap": "slc.audit.manage",
+      "path": "#admin-activity"
+    },
+    {
+      "id": "slc.security",
+      "system": "slc",
+      "name": "Chính sách & bảo mật",
+      "description": "Policies, role assignments, custom roles, session và login throttle.",
+      "category": "Bảo mật",
+      "view_cap": "slc.security.view",
+      "manage_cap": "slc.security.manage",
+      "path": "#admin-policies"
+    },
+    {
+      "id": "slc.system",
+      "system": "slc",
+      "name": "System Admin",
+      "description": "Diagnostics, cleanup, live metrics, upgrade, settings và system jobs.",
+      "category": "Hệ thống",
+      "view_cap": "slc.system.view",
+      "manage_cap": "slc.system.manage",
+      "path": "#admin-system"
+    },
+    {
+      "id": "slc.email",
+      "system": "slc",
+      "name": "Email hệ thống",
+      "description": "Email template, email logs và kiểm thử gửi email.",
+      "category": "Hệ thống",
+      "view_cap": "slc.email.view",
+      "manage_cap": "slc.email.manage",
+      "path": "#admin-email"
+    },
+    {
+      "id": "slc.website",
+      "system": "slc",
+      "name": "Website Studio",
+      "description": "Website revisions và công cụ chỉnh giao diện trong SLC.",
+      "category": "Nội dung",
+      "view_cap": "slc.website.view",
+      "manage_cap": "slc.website.manage",
+      "path": "#website-studio"
+    },
+    {
+      "id": "slc.command",
+      "system": "slc",
+      "name": "Command Center",
+      "description": "Truy cập nhanh, tìm lệnh và tác vụ quản trị.",
+      "category": "Điều hành",
+      "view_cap": "slc.command.view",
+      "manage_cap": null,
+      "path": "#command-center"
+    },
+    {
+      "id": "exam.entry",
+      "system": "exam",
+      "name": "Vào kỳ thi",
+      "description": "Nhận link/mã dự thi, launch từ SLC và điều hướng vào bài thi.",
+      "category": "Dự thi",
+      "view_cap": "exam.entry.view",
+      "manage_cap": "exam.entry.manage",
+      "path": "/"
+    },
+    {
+      "id": "exam.identity",
+      "system": "exam",
+      "name": "Xác minh thí sinh",
+      "description": "Thông tin thí sinh khách và xác minh theo chính sách kỳ thi.",
+      "category": "Dự thi",
+      "view_cap": "exam.identity.view",
+      "manage_cap": "exam.identity.manage",
+      "path": "/"
+    },
+    {
+      "id": "exam.player",
+      "system": "exam",
+      "name": "Exam Player",
+      "description": "Làm bài một câu/màn hình, điều hướng, đánh dấu và timer.",
+      "category": "Dự thi",
+      "view_cap": "exam.player.view",
+      "manage_cap": "exam.player.manage",
+      "path": "/"
+    },
+    {
+      "id": "exam.autosave",
+      "system": "exam",
+      "name": "Autosave & Recovery",
+      "description": "Tự lưu, lưu cục bộ và khôi phục bài khi refresh/mất kết nối.",
+      "category": "Dự thi",
+      "view_cap": "exam.autosave.view",
+      "manage_cap": "exam.autosave.manage",
+      "path": "/"
+    },
+    {
+      "id": "exam.integrity",
+      "system": "exam",
+      "name": "Integrity & Strict Mode",
+      "description": "Fullscreen, sự kiện integrity và giám sát hành vi theo cấu hình.",
+      "category": "Dự thi",
+      "view_cap": "exam.integrity.view",
+      "manage_cap": "exam.integrity.manage",
+      "path": "/"
+    },
+    {
+      "id": "exam.submit",
+      "system": "exam",
+      "name": "Nộp bài & biên nhận",
+      "description": "Xác nhận nộp, receipt, màn hoàn tất và kết quả theo policy.",
+      "category": "Dự thi",
+      "view_cap": "exam.submit.view",
+      "manage_cap": "exam.submit.manage",
+      "path": "/"
+    },
+    {
+      "id": "exam.health",
+      "system": "exam",
+      "name": "Health",
+      "description": "Trạng thái runtime của Exam.",
+      "category": "Hệ thống",
+      "view_cap": "exam.health.view",
+      "manage_cap": null,
+      "path": "/health"
+    },
+    {
+      "id": "member.accountrequests",
+      "system": "member",
+      "name": "Yêu cầu cấp tài khoản",
+      "description": "Tiếp nhận, tra cứu và duyệt yêu cầu tài khoản thành viên.",
+      "category": "Tài khoản",
+      "view_cap": "member.accountrequests.view",
+      "manage_cap": "member.accountrequests.manage",
+      "path": "#account-requests"
+    },
+    {
+      "id": "member.directory",
+      "system": "member",
+      "name": "Danh bạ thành viên",
+      "description": "Danh bạ và tra cứu thành viên theo phạm vi quyền.",
+      "category": "Nhân sự",
+      "view_cap": "member.directory.view",
+      "manage_cap": "member.directory.manage",
+      "path": "#directory"
+    },
+    {
+      "id": "member.profile",
+      "system": "member",
+      "name": "Hồ sơ thành viên",
+      "description": "Thông tin cá nhân, avatar và dữ liệu hồ sơ thành viên.",
+      "category": "Nhân sự",
+      "view_cap": "member.profile.view",
+      "manage_cap": "member.profile.manage",
+      "path": "#profile"
+    },
+    {
+      "id": "member.org",
+      "system": "member",
+      "name": "Đơn vị & chức vụ",
+      "description": "Cơ cấu đơn vị, membership, chức vụ và phạm vi hoạt động.",
+      "category": "Nhân sự",
+      "view_cap": "member.org.view",
+      "manage_cap": "member.org.manage",
+      "path": "#organization"
+    },
+    {
+      "id": "member.history",
+      "system": "member",
+      "name": "Quá trình công tác",
+      "description": "Journey, lịch sử hoạt động và quá trình tham gia.",
+      "category": "Nhân sự",
+      "view_cap": "member.history.view",
+      "manage_cap": "member.history.manage",
+      "path": "#journey"
+    },
+    {
+      "id": "member.cv",
+      "system": "member",
+      "name": "CV thành viên",
+      "description": "CV điện tử và xuất CV.",
+      "category": "Nhân sự",
+      "view_cap": "member.cv.view",
+      "manage_cap": "member.cv.manage",
+      "path": "#cv"
+    },
+    {
+      "id": "member.cards",
+      "system": "member",
+      "name": "Thẻ thành viên",
+      "description": "Loại thẻ và thẻ thành viên.",
+      "category": "Nhân sự",
+      "view_cap": "member.cards.view",
+      "manage_cap": "member.cards.manage",
+      "path": "#cards"
+    },
+    {
+      "id": "member.goals",
+      "system": "member",
+      "name": "Mục tiêu",
+      "description": "Mục tiêu cá nhân và tiến độ.",
+      "category": "Công việc",
+      "view_cap": "member.goals.view",
+      "manage_cap": "member.goals.manage",
+      "path": "#goals"
+    },
+    {
+      "id": "member.tasks",
+      "system": "member",
+      "name": "Công việc",
+      "description": "Nhiệm vụ, trạng thái và tiến độ.",
+      "category": "Công việc",
+      "view_cap": "member.tasks.view",
+      "manage_cap": "member.tasks.manage",
+      "path": "#tasks"
+    },
+    {
+      "id": "member.activities",
+      "system": "member",
+      "name": "Hoạt động",
+      "description": "Hoạt động và người tham gia.",
+      "category": "Hoạt động",
+      "view_cap": "member.activities.view",
+      "manage_cap": "member.activities.manage",
+      "path": "#activities"
+    },
+    {
+      "id": "member.achievements",
+      "system": "member",
+      "name": "Thành tích",
+      "description": "Thành tích, ghi nhận và lịch sử.",
+      "category": "Hoạt động",
+      "view_cap": "member.achievements.view",
+      "manage_cap": "member.achievements.manage",
+      "path": "#achievements"
+    },
+    {
+      "id": "member.documents",
+      "system": "member",
+      "name": "Tài liệu",
+      "description": "Tài liệu thành viên và tệp liên quan.",
+      "category": "Tài liệu",
+      "view_cap": "member.documents.view",
+      "manage_cap": "member.documents.manage",
+      "path": "#documents"
+    },
+    {
+      "id": "member.certificates",
+      "system": "member",
+      "name": "Chứng nhận",
+      "description": "Chứng nhận nội bộ, bên ngoài và xác minh.",
+      "category": "Chứng nhận",
+      "view_cap": "member.certificates.view",
+      "manage_cap": "member.certificates.manage",
+      "path": "#certificates"
+    },
+    {
+      "id": "member.evaluations",
+      "system": "member",
+      "name": "Đánh giá",
+      "description": "Đánh giá thành viên và dữ liệu dài hạn.",
+      "category": "Nhân sự",
+      "view_cap": "member.evaluations.view",
+      "manage_cap": "member.evaluations.manage",
+      "path": "#evaluations"
+    },
+    {
+      "id": "member.calendar",
+      "system": "member",
+      "name": "Lịch",
+      "description": "Lịch cá nhân và lịch quản trị.",
+      "category": "Công việc",
+      "view_cap": "member.calendar.view",
+      "manage_cap": "member.calendar.manage",
+      "path": "#calendar"
+    },
+    {
+      "id": "member.notifications",
+      "system": "member",
+      "name": "Thông báo",
+      "description": "Thông báo thành viên.",
+      "category": "Giao tiếp",
+      "view_cap": "member.notifications.view",
+      "manage_cap": "member.notifications.manage",
+      "path": "#notifications"
+    },
+    {
+      "id": "member.support",
+      "system": "member",
+      "name": "Hỗ trợ",
+      "description": "Ticket hỗ trợ của thành viên.",
+      "category": "Hỗ trợ",
+      "view_cap": "member.support.view",
+      "manage_cap": "member.support.manage",
+      "path": "#support"
+    },
+    {
+      "id": "member.security",
+      "system": "member",
+      "name": "Security Center",
+      "description": "Security events, session, revoke session và mật khẩu.",
+      "category": "Bảo mật",
+      "view_cap": "member.security.view",
+      "manage_cap": "member.security.manage",
+      "path": "#security"
+    },
+    {
+      "id": "member.audit",
+      "system": "member",
+      "name": "Audit",
+      "description": "Audit quản trị thành viên.",
+      "category": "Bảo mật",
+      "view_cap": "member.audit.view",
+      "manage_cap": "member.audit.manage",
+      "path": "#admin-audit"
+    },
+    {
+      "id": "member.super",
+      "system": "member",
+      "name": "Super Admin",
+      "description": "Overview, inspect account, meta và quản trị cấp cao.",
+      "category": "Hệ thống",
+      "view_cap": "member.super.view",
+      "manage_cap": "member.super.manage",
+      "path": "#admin"
+    },
+    {
+      "id": "tnv.applications",
+      "system": "tnv",
+      "name": "Hồ sơ TNV",
+      "description": "Đăng ký, tra cứu, xét duyệt và trạng thái hồ sơ tình nguyện viên.",
+      "category": "Tình nguyện",
+      "view_cap": "tnv.applications.view",
+      "manage_cap": "tnv.applications.manage",
+      "path": "#applications"
+    },
+    {
+      "id": "tnv.opportunities",
+      "system": "tnv",
+      "name": "Cơ hội tình nguyện",
+      "description": "Danh sách cơ hội, thời gian, đơn vị và trạng thái tuyển.",
+      "category": "Tình nguyện",
+      "view_cap": "tnv.opportunities.view",
+      "manage_cap": "tnv.opportunities.manage",
+      "path": "#opportunities"
+    },
+    {
+      "id": "tnv.profile",
+      "system": "tnv",
+      "name": "Hồ sơ TNV",
+      "description": "Hồ sơ cá nhân và đơn vị của TNV.",
+      "category": "Tình nguyện",
+      "view_cap": "tnv.profile.view",
+      "manage_cap": "tnv.profile.manage",
+      "path": "#profile"
+    },
+    {
+      "id": "tnv.tasks",
+      "system": "tnv",
+      "name": "Nhiệm vụ TNV",
+      "description": "Phân công nhiệm vụ, deadline và trạng thái.",
+      "category": "Tình nguyện",
+      "view_cap": "tnv.tasks.view",
+      "manage_cap": "tnv.tasks.manage",
+      "path": "#tasks"
+    },
+    {
+      "id": "tnv.activities",
+      "system": "tnv",
+      "name": "Hoạt động của tôi",
+      "description": "Lịch sử và hoạt động TNV.",
+      "category": "Tình nguyện",
+      "view_cap": "tnv.activities.view",
+      "manage_cap": "tnv.activities.manage",
+      "path": "#activities"
+    },
+    {
+      "id": "tnv.units",
+      "system": "tnv",
+      "name": "Đơn vị",
+      "description": "Đơn vị tổ chức và phạm vi quản trị.",
+      "category": "Tổ chức",
+      "view_cap": "tnv.units.view",
+      "manage_cap": "tnv.units.manage",
+      "path": "#units"
+    },
+    {
+      "id": "tnv.certificates",
+      "system": "tnv",
+      "name": "Tra cứu chứng nhận",
+      "description": "Tra cứu chứng nhận công khai và dữ liệu chứng nhận TNV.",
+      "category": "Chứng nhận",
+      "view_cap": "tnv.certificates.view",
+      "manage_cap": "tnv.certificates.manage",
+      "path": "#certificates"
+    },
+    {
+      "id": "tnv.users",
+      "system": "tnv",
+      "name": "Tài khoản TNV/Admin",
+      "description": "Người dùng, trạng thái và phân loại volunteer/admin.",
+      "category": "Tài khoản",
+      "view_cap": "tnv.users.view",
+      "manage_cap": "tnv.users.manage",
+      "path": "#admin-users"
+    },
+    {
+      "id": "tnv.audit",
+      "system": "tnv",
+      "name": "Audit TNV",
+      "description": "Audit log hoạt động quản trị.",
+      "category": "Bảo mật",
+      "view_cap": "tnv.audit.view",
+      "manage_cap": "tnv.audit.manage",
+      "path": "#admin-audit"
+    },
+    {
+      "id": "tnv.dashboard",
+      "system": "tnv",
+      "name": "Dashboard TNV",
+      "description": "Tổng quan vận hành tình nguyện viên.",
+      "category": "Điều hành",
+      "view_cap": "tnv.dashboard.view",
+      "manage_cap": null,
+      "path": "#dashboard"
+    },
+    {
+      "id": "ctt.recruitment",
+      "system": "ctt",
+      "name": "Tuyển dụng & ứng tuyển",
+      "description": "Form tuyển dụng, submissions, interviews và đánh giá.",
+      "category": "Nhân sự",
+      "view_cap": "ctt.recruitment.view",
+      "manage_cap": "ctt.recruitment.manage",
+      "path": "#recruitment"
+    },
+    {
+      "id": "ctt.hr",
+      "system": "ctt",
+      "name": "Hồ sơ nhân sự",
+      "description": "People, lịch sử, đơn vị, chức vụ và hồ sơ nhân sự.",
+      "category": "Nhân sự",
+      "view_cap": "ctt.hr.view",
+      "manage_cap": "ctt.hr.manage",
+      "path": "#people"
+    },
+    {
+      "id": "ctt.forms",
+      "system": "ctt",
+      "name": "Form Builder",
+      "description": "Tạo biểu mẫu, phiên bản form và submissions.",
+      "category": "Biểu mẫu",
+      "view_cap": "ctt.forms.view",
+      "manage_cap": "ctt.forms.manage",
+      "path": "#forms"
+    },
+    {
+      "id": "ctt.approvals",
+      "system": "ctt",
+      "name": "Trung tâm phê duyệt",
+      "description": "Approval workflow, người duyệt, deadline và quyết định.",
+      "category": "Điều hành",
+      "view_cap": "ctt.approvals.view",
+      "manage_cap": "ctt.approvals.manage",
+      "path": "#approvals"
+    },
+    {
+      "id": "ctt.tasks",
+      "system": "ctt",
+      "name": "Nhiệm vụ",
+      "description": "Nhiệm vụ, priority, deadline và người phụ trách.",
+      "category": "Điều hành",
+      "view_cap": "ctt.tasks.view",
+      "manage_cap": "ctt.tasks.manage",
+      "path": "#tasks"
+    },
+    {
+      "id": "ctt.classes",
+      "system": "ctt",
+      "name": "Lớp & ghi danh",
+      "description": "Lớp, enrollment, teaching scope và điểm danh.",
+      "category": "Giáo dục",
+      "view_cap": "ctt.classes.view",
+      "manage_cap": "ctt.classes.manage",
+      "path": "#classes"
+    },
+    {
+      "id": "ctt.events",
+      "system": "ctt",
+      "name": "Sự kiện & check-in",
+      "description": "Sự kiện, đăng ký, check-in và feedback.",
+      "category": "Sự kiện",
+      "view_cap": "ctt.events.view",
+      "manage_cap": "ctt.events.manage",
+      "path": "#events"
+    },
+    {
+      "id": "ctt.certificates",
+      "system": "ctt",
+      "name": "GCN/GXN",
+      "description": "Cấp, duyệt, tra cứu, lịch sử và file chứng nhận.",
+      "category": "Chứng nhận",
+      "view_cap": "ctt.certificates.view",
+      "manage_cap": "ctt.certificates.manage",
+      "path": "#certificates"
+    },
+    {
+      "id": "ctt.content",
+      "system": "ctt",
+      "name": "Tin tức & nội dung",
+      "description": "News, modules và nội dung công khai.",
+      "category": "Nội dung",
+      "view_cap": "ctt.content.view",
+      "manage_cap": "ctt.content.manage",
+      "path": "#content"
+    },
+    {
+      "id": "ctt.files",
+      "system": "ctt",
+      "name": "File & Media",
+      "description": "Upload, files, media và R2.",
+      "category": "Tài liệu",
+      "view_cap": "ctt.files.view",
+      "manage_cap": "ctt.files.manage",
+      "path": "#files"
+    },
+    {
+      "id": "ctt.search",
+      "system": "ctt",
+      "name": "Tìm kiếm",
+      "description": "Tìm kiếm dữ liệu quản trị.",
+      "category": "Điều hành",
+      "view_cap": "ctt.search.view",
+      "manage_cap": null,
+      "path": "#search"
+    },
+    {
+      "id": "ctt.export",
+      "system": "ctt",
+      "name": "Xuất dữ liệu",
+      "description": "Export submissions và dữ liệu quản trị.",
+      "category": "Báo cáo",
+      "view_cap": "ctt.export.view",
+      "manage_cap": "ctt.export.manage",
+      "path": "#export"
+    },
+    {
+      "id": "ctt.tickets",
+      "system": "ctt",
+      "name": "Hỗ trợ",
+      "description": "Ticket, phân công và trao đổi hỗ trợ.",
+      "category": "Hỗ trợ",
+      "view_cap": "ctt.tickets.view",
+      "manage_cap": "ctt.tickets.manage",
+      "path": "#tickets"
+    },
+    {
+      "id": "ctt.notifications",
+      "system": "ctt",
+      "name": "Thông báo",
+      "description": "Thông báo và trạng thái đọc.",
+      "category": "Giao tiếp",
+      "view_cap": "ctt.notifications.view",
+      "manage_cap": "ctt.notifications.manage",
+      "path": "#notifications"
+    },
+    {
+      "id": "ctt.requests",
+      "system": "ctt",
+      "name": "Yêu cầu nội bộ & dữ liệu",
+      "description": "Internal requests và data requests.",
+      "category": "Điều hành",
+      "view_cap": "ctt.requests.view",
+      "manage_cap": "ctt.requests.manage",
+      "path": "#requests"
+    },
+    {
+      "id": "ctt.email",
+      "system": "ctt",
+      "name": "Email logs & templates",
+      "description": "Template, log gửi mail và trạng thái delivery.",
+      "category": "Hệ thống",
+      "view_cap": "ctt.email.view",
+      "manage_cap": "ctt.email.manage",
+      "path": "#email"
+    },
+    {
+      "id": "ctt.backup",
+      "system": "ctt",
+      "name": "Backup",
+      "description": "Backup, restore metadata và lịch sử backup.",
+      "category": "Hệ thống",
+      "view_cap": "ctt.backup.view",
+      "manage_cap": "ctt.backup.manage",
+      "path": "#backups"
+    },
+    {
+      "id": "ctt.audit",
+      "system": "ctt",
+      "name": "Audit",
+      "description": "Audit toàn cổng thông tin.",
+      "category": "Bảo mật",
+      "view_cap": "ctt.audit.view",
+      "manage_cap": "ctt.audit.manage",
+      "path": "#audit"
+    },
+    {
+      "id": "ctt.security",
+      "system": "ctt",
+      "name": "Auth, 2FA & session",
+      "description": "Đăng nhập, Google OAuth, 2FA, phiên và reset mật khẩu.",
+      "category": "Bảo mật",
+      "view_cap": "ctt.security.view",
+      "manage_cap": "ctt.security.manage",
+      "path": "#security"
+    },
+    {
+      "id": "ctt.settings",
+      "system": "ctt",
+      "name": "Thiết lập & điều khoản",
+      "description": "Settings, terms, modules và cấu hình cổng.",
+      "category": "Hệ thống",
+      "view_cap": "ctt.settings.view",
+      "manage_cap": "ctt.settings.manage",
+      "path": "#settings"
+    },
+    {
+      "id": "web.cms",
+      "system": "web",
+      "name": "CMS",
+      "description": "Quản lý site config và tài liệu CMS.",
+      "category": "Nội dung",
+      "view_cap": "web.cms.view",
+      "manage_cap": "web.cms.manage",
+      "path": "/admin"
+    },
+    {
+      "id": "web.news",
+      "system": "web",
+      "name": "Tin tức",
+      "description": "Bài viết, nội dung và hiển thị tin tức.",
+      "category": "Nội dung",
+      "view_cap": "web.news.view",
+      "manage_cap": "web.news.manage",
+      "path": "/admin"
+    },
+    {
+      "id": "web.programs",
+      "system": "web",
+      "name": "Chương trình/Dự án",
+      "description": "Quản lý chương trình, dự án và trang chi tiết.",
+      "category": "Nội dung",
+      "view_cap": "web.programs.view",
+      "manage_cap": "web.programs.manage",
+      "path": "/admin"
+    },
+    {
+      "id": "web.units",
+      "system": "web",
+      "name": "Đơn vị",
+      "description": "Quản lý các đơn vị/nhánh trên website.",
+      "category": "Nội dung",
+      "view_cap": "web.units.view",
+      "manage_cap": "web.units.manage",
+      "path": "/admin"
+    },
+    {
+      "id": "web.pages",
+      "system": "web",
+      "name": "Trang nội dung",
+      "description": "Giới thiệu, liên hệ, tham gia, tài trợ, chứng nhận và các trang độc lập.",
+      "category": "Nội dung",
+      "view_cap": "web.pages.view",
+      "manage_cap": "web.pages.manage",
+      "path": "/admin"
+    },
+    {
+      "id": "web.visual",
+      "system": "web",
+      "name": "Visual Website Editor",
+      "description": "Chỉnh giao diện, layout và nội dung toàn cục.",
+      "category": "Nội dung",
+      "view_cap": "web.visual.view",
+      "manage_cap": "web.visual.manage",
+      "path": "/admin"
+    },
+    {
+      "id": "web.media",
+      "system": "web",
+      "name": "Media",
+      "description": "Upload và quản lý media.",
+      "category": "Tài liệu",
+      "view_cap": "web.media.view",
+      "manage_cap": "web.media.manage",
+      "path": "/admin"
+    },
+    {
+      "id": "web.registrations",
+      "system": "web",
+      "name": "Đăng ký chương trình",
+      "description": "Hồ sơ đăng ký và danh sách người tham gia.",
+      "category": "Cộng đồng",
+      "view_cap": "web.registrations.view",
+      "manage_cap": "web.registrations.manage",
+      "path": "/admin"
+    },
+    {
+      "id": "web.contacts",
+      "system": "web",
+      "name": "Liên hệ",
+      "description": "Tin nhắn liên hệ từ website.",
+      "category": "Cộng đồng",
+      "view_cap": "web.contacts.view",
+      "manage_cap": "web.contacts.manage",
+      "path": "/admin"
+    },
+    {
+      "id": "web.comments",
+      "system": "web",
+      "name": "Bình luận",
+      "description": "Bình luận tin tức và moderation.",
+      "category": "Cộng đồng",
+      "view_cap": "web.comments.view",
+      "manage_cap": "web.comments.manage",
+      "path": "/admin"
+    },
+    {
+      "id": "web.adminusers",
+      "system": "web",
+      "name": "Admin Website",
+      "description": "Người dùng quản trị, role và mật khẩu.",
+      "category": "Hệ thống",
+      "view_cap": "web.adminusers.view",
+      "manage_cap": "web.adminusers.manage",
+      "path": "/admin"
+    },
+    {
+      "id": "web.records",
+      "system": "web",
+      "name": "Admin Records",
+      "description": "Record quản trị và dữ liệu nội bộ website.",
+      "category": "Hệ thống",
+      "view_cap": "web.records.view",
+      "manage_cap": "web.records.manage",
+      "path": "/admin"
+    },
+    {
+      "id": "web.audit",
+      "system": "web",
+      "name": "Audit Website",
+      "description": "Lịch sử thao tác admin.",
+      "category": "Bảo mật",
+      "view_cap": "web.audit.view",
+      "manage_cap": "web.audit.manage",
+      "path": "/admin"
+    },
+    {
+      "id": "web.health",
+      "system": "web",
+      "name": "System Health",
+      "description": "Tình trạng website và release.",
+      "category": "Hệ thống",
+      "view_cap": "web.health.view",
+      "manage_cap": null,
+      "path": "/admin"
+    },
+    {
+      "id": "sfec.recruitment",
+      "system": "sfec",
+      "name": "Tuyển TNV/Thành viên",
+      "description": "Form, submissions, interview và quy trình tuyển.",
+      "category": "Nhân sự",
+      "view_cap": "sfec.recruitment.view",
+      "manage_cap": "sfec.recruitment.manage",
+      "path": "#recruitment"
+    },
+    {
+      "id": "sfec.people",
+      "system": "sfec",
+      "name": "Hồ sơ SFEC",
+      "description": "People, chức vụ, lịch sử và thông tin thành viên.",
+      "category": "Nhân sự",
+      "view_cap": "sfec.people.view",
+      "manage_cap": "sfec.people.manage",
+      "path": "#people"
+    },
+    {
+      "id": "sfec.classes",
+      "system": "sfec",
+      "name": "Lớp học SFEC",
+      "description": "Lớp, enrollment, teaching scope và vận hành lớp.",
+      "category": "Giáo dục",
+      "view_cap": "sfec.classes.view",
+      "manage_cap": "sfec.classes.manage",
+      "path": "#classes"
+    },
+    {
+      "id": "sfec.attendance",
+      "system": "sfec",
+      "name": "Điểm danh",
+      "description": "Điểm danh học viên và lịch sử.",
+      "category": "Giáo dục",
+      "view_cap": "sfec.attendance.view",
+      "manage_cap": "sfec.attendance.manage",
+      "path": "#attendance"
+    },
+    {
+      "id": "sfec.forms",
+      "system": "sfec",
+      "name": "Biểu mẫu",
+      "description": "Form builder và submissions.",
+      "category": "Biểu mẫu",
+      "view_cap": "sfec.forms.view",
+      "manage_cap": "sfec.forms.manage",
+      "path": "#forms"
+    },
+    {
+      "id": "sfec.events",
+      "system": "sfec",
+      "name": "Hoạt động & sự kiện",
+      "description": "Sự kiện, đăng ký, check-in và hoạt động CLB.",
+      "category": "Sự kiện",
+      "view_cap": "sfec.events.view",
+      "manage_cap": "sfec.events.manage",
+      "path": "#events"
+    },
+    {
+      "id": "sfec.certificates",
+      "system": "sfec",
+      "name": "GCN/GXN SFEC",
+      "description": "Cấp, duyệt, tra cứu và xác minh chứng nhận.",
+      "category": "Chứng nhận",
+      "view_cap": "sfec.certificates.view",
+      "manage_cap": "sfec.certificates.manage",
+      "path": "#certificates"
+    },
+    {
+      "id": "sfec.approvals",
+      "system": "sfec",
+      "name": "Phê duyệt",
+      "description": "Workflow phê duyệt nội bộ SFEC.",
+      "category": "Điều hành",
+      "view_cap": "sfec.approvals.view",
+      "manage_cap": "sfec.approvals.manage",
+      "path": "#approvals"
+    },
+    {
+      "id": "sfec.tasks",
+      "system": "sfec",
+      "name": "Nhiệm vụ",
+      "description": "Nhiệm vụ, deadline và người phụ trách.",
+      "category": "Điều hành",
+      "view_cap": "sfec.tasks.view",
+      "manage_cap": "sfec.tasks.manage",
+      "path": "#tasks"
+    },
+    {
+      "id": "sfec.content",
+      "system": "sfec",
+      "name": "CMS & Website Studio",
+      "description": "Tin tức, site pages, revision và nội dung website SFEC.",
+      "category": "Nội dung",
+      "view_cap": "sfec.content.view",
+      "manage_cap": "sfec.content.manage",
+      "path": "#site-studio"
+    },
+    {
+      "id": "sfec.files",
+      "system": "sfec",
+      "name": "File & Media",
+      "description": "Upload, files và media.",
+      "category": "Tài liệu",
+      "view_cap": "sfec.files.view",
+      "manage_cap": "sfec.files.manage",
+      "path": "#files"
+    },
+    {
+      "id": "sfec.tickets",
+      "system": "sfec",
+      "name": "Hỗ trợ",
+      "description": "Ticket hỗ trợ và phản hồi.",
+      "category": "Hỗ trợ",
+      "view_cap": "sfec.tickets.view",
+      "manage_cap": "sfec.tickets.manage",
+      "path": "#tickets"
+    },
+    {
+      "id": "sfec.notifications",
+      "system": "sfec",
+      "name": "Thông báo",
+      "description": "Thông báo nội bộ và trạng thái đọc.",
+      "category": "Giao tiếp",
+      "view_cap": "sfec.notifications.view",
+      "manage_cap": "sfec.notifications.manage",
+      "path": "#notifications"
+    },
+    {
+      "id": "sfec.email",
+      "system": "sfec",
+      "name": "Email logs & templates",
+      "description": "Template và log email SFEC.",
+      "category": "Hệ thống",
+      "view_cap": "sfec.email.view",
+      "manage_cap": "sfec.email.manage",
+      "path": "#email"
+    },
+    {
+      "id": "sfec.backup",
+      "system": "sfec",
+      "name": "Backup",
+      "description": "Backup và lịch sử backup.",
+      "category": "Hệ thống",
+      "view_cap": "sfec.backup.view",
+      "manage_cap": "sfec.backup.manage",
+      "path": "#backups"
+    },
+    {
+      "id": "sfec.audit",
+      "system": "sfec",
+      "name": "Audit SFEC",
+      "description": "Audit log toàn SFEC.",
+      "category": "Bảo mật",
+      "view_cap": "sfec.audit.view",
+      "manage_cap": "sfec.audit.manage",
+      "path": "#audit"
+    },
+    {
+      "id": "sfec.security",
+      "system": "sfec",
+      "name": "Auth, 2FA & session",
+      "description": "Đăng nhập, 2FA, session và reset mật khẩu.",
+      "category": "Bảo mật",
+      "view_cap": "sfec.security.view",
+      "manage_cap": "sfec.security.manage",
+      "path": "#security"
+    },
+    {
+      "id": "sfec.settings",
+      "system": "sfec",
+      "name": "Cấu hình SFEC",
+      "description": "Settings, terms, modules và cấu hình.",
+      "category": "Hệ thống",
+      "view_cap": "sfec.settings.view",
+      "manage_cap": "sfec.settings.manage",
+      "path": "#settings"
+    },
+    {
+      "id": "mail.mailbox",
+      "system": "mail",
+      "name": "Hộp thư",
+      "description": "Inbox, Sent, Spam, Trash, Starred và mailbox summary.",
+      "category": "Email",
+      "view_cap": "mail.mailbox.view",
+      "manage_cap": "mail.mailbox.manage",
+      "path": "/"
+    },
+    {
+      "id": "mail.messages",
+      "system": "mail",
+      "name": "Thư & hội thoại",
+      "description": "Đọc thư, thread, trạng thái read/star và bulk actions.",
+      "category": "Email",
+      "view_cap": "mail.messages.view",
+      "manage_cap": "mail.messages.manage",
+      "path": "/"
+    },
+    {
+      "id": "mail.compose",
+      "system": "mail",
+      "name": "Soạn & gửi thư",
+      "description": "Compose, attachment và gửi nội bộ/bên ngoài.",
+      "category": "Email",
+      "view_cap": "mail.compose.view",
+      "manage_cap": "mail.compose.manage",
+      "path": "/"
+    },
+    {
+      "id": "mail.drafts",
+      "system": "mail",
+      "name": "Bản nháp",
+      "description": "Lưu và quản lý draft.",
+      "category": "Email",
+      "view_cap": "mail.drafts.view",
+      "manage_cap": "mail.drafts.manage",
+      "path": "/"
+    },
+    {
+      "id": "mail.contacts",
+      "system": "mail",
+      "name": "Danh bạ",
+      "description": "Contacts và directory.",
+      "category": "Email",
+      "view_cap": "mail.contacts.view",
+      "manage_cap": "mail.contacts.manage",
+      "path": "/"
+    },
+    {
+      "id": "mail.labels",
+      "system": "mail",
+      "name": "Nhãn",
+      "description": "Labels và message labels.",
+      "category": "Email",
+      "view_cap": "mail.labels.view",
+      "manage_cap": "mail.labels.manage",
+      "path": "/"
+    },
+    {
+      "id": "mail.signatures",
+      "system": "mail",
+      "name": "Chữ ký",
+      "description": "Quản lý chữ ký email.",
+      "category": "Email",
+      "view_cap": "mail.signatures.view",
+      "manage_cap": "mail.signatures.manage",
+      "path": "/"
+    },
+    {
+      "id": "mail.aliases",
+      "system": "mail",
+      "name": "Alias",
+      "description": "Alias và sender identity.",
+      "category": "Email",
+      "view_cap": "mail.aliases.view",
+      "manage_cap": "mail.aliases.manage",
+      "path": "/"
+    },
+    {
+      "id": "mail.rules",
+      "system": "mail",
+      "name": "Rules",
+      "description": "Quy tắc xử lý mail.",
+      "category": "Email",
+      "view_cap": "mail.rules.view",
+      "manage_cap": "mail.rules.manage",
+      "path": "/"
+    },
+    {
+      "id": "mail.templates",
+      "system": "mail",
+      "name": "Mẫu email",
+      "description": "Mail templates.",
+      "category": "Email",
+      "view_cap": "mail.templates.view",
+      "manage_cap": "mail.templates.manage",
+      "path": "/"
+    },
+    {
+      "id": "mail.notifications",
+      "system": "mail",
+      "name": "Thông báo",
+      "description": "Thông báo của Mail.",
+      "category": "Giao tiếp",
+      "view_cap": "mail.notifications.view",
+      "manage_cap": "mail.notifications.manage",
+      "path": "/"
+    },
+    {
+      "id": "mail.sessions",
+      "system": "mail",
+      "name": "Phiên đăng nhập",
+      "description": "Session, revoke session và bảo mật truy cập.",
+      "category": "Bảo mật",
+      "view_cap": "mail.sessions.view",
+      "manage_cap": "mail.sessions.manage",
+      "path": "/"
+    },
+    {
+      "id": "mail.profile",
+      "system": "mail",
+      "name": "Hồ sơ Mail",
+      "description": "Tên hiển thị, avatar, password và trạng thái.",
+      "category": "Tài khoản",
+      "view_cap": "mail.profile.view",
+      "manage_cap": "mail.profile.manage",
+      "path": "/"
+    },
+    {
+      "id": "mail.adminusers",
+      "system": "mail",
+      "name": "Quản trị người dùng Mail",
+      "description": "Users, status, role và mailbox.",
+      "category": "Hệ thống",
+      "view_cap": "mail.adminusers.view",
+      "manage_cap": "mail.adminusers.manage",
+      "path": "/"
+    },
+    {
+      "id": "mail.domains",
+      "system": "mail",
+      "name": "Tên miền Mail",
+      "description": "Managed domains và cấu hình domain.",
+      "category": "Hệ thống",
+      "view_cap": "mail.domains.view",
+      "manage_cap": "mail.domains.manage",
+      "path": "/"
+    },
+    {
+      "id": "mail.delivery",
+      "system": "mail",
+      "name": "Delivery & logs",
+      "description": "Delivery events, provider status và audit.",
+      "category": "Hệ thống",
+      "view_cap": "mail.delivery.view",
+      "manage_cap": "mail.delivery.manage",
+      "path": "/"
+    },
+    {
+      "id": "mail.system",
+      "system": "mail",
+      "name": "System Admin Mail",
+      "description": "Dashboard, usage, settings và system health.",
+      "category": "Hệ thống",
+      "view_cap": "mail.system.view",
+      "manage_cap": "mail.system.manage",
+      "path": "/"
+    },
+    {
+      "id": "mail.audit",
+      "system": "mail",
+      "name": "Audit Mail",
+      "description": "Audit log và login history.",
+      "category": "Bảo mật",
+      "view_cap": "mail.audit.view",
+      "manage_cap": "mail.audit.manage",
+      "path": "/"
+    }
+  ],
+  "roles": {
+    "super_admin": [
+      "*"
+    ],
+    "executive": [
+      "overview.view",
+      "health.view",
+      "alerts.view",
+      "incidents.view",
+      "reports.view",
+      "search.global",
+      "*.view"
+    ],
+    "system_admin": [
+      "overview.view",
+      "health.*",
+      "alerts.*",
+      "incidents.*",
+      "reports.*",
+      "search.global",
+      "security.*",
+      "audit.*",
+      "ops.*",
+      "*.view",
+      "mail.system.manage",
+      "mail.adminusers.manage",
+      "mail.domains.manage",
+      "slc.system.manage",
+      "slc.security.manage"
+    ],
+    "education_admin": [
+      "overview.view",
+      "health.view",
+      "alerts.view",
+      "reports.view",
+      "search.global",
+      "slc.*",
+      "exam.*",
+      "sfec.classes.*",
+      "sfec.attendance.*",
+      "sfec.certificates.view",
+      "ctt.classes.*"
+    ],
+    "hr_admin": [
+      "overview.view",
+      "alerts.view",
+      "reports.view",
+      "search.global",
+      "member.*",
+      "tnv.*",
+      "ctt.hr.*",
+      "ctt.recruitment.*",
+      "ctt.approvals.*",
+      "ctt.certificates.*",
+      "sfec.people.*",
+      "sfec.recruitment.*"
+    ],
+    "communications_admin": [
+      "overview.view",
+      "reports.view",
+      "search.global",
+      "web.*",
+      "ctt.content.*",
+      "ctt.files.*",
+      "sfec.content.*",
+      "sfec.files.*"
+    ],
+    "auditor": [
+      "overview.view",
+      "health.view",
+      "alerts.view",
+      "incidents.view",
+      "reports.view",
+      "search.global",
+      "audit.view",
+      "security.view",
+      "*.view"
+    ],
+    "viewer": [
+      "overview.view",
+      "health.view"
+    ]
+  },
+  "module_count": 135
+}

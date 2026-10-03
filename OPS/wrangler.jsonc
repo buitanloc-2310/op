@@ -1,0 +1,35 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "sky-first-ops",
+  "main": "src/index.js",
+  "compatibility_date": "2026-10-03",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+  "vars": {
+    "APP_NAME": "Trung tâm Điều hành Sky First",
+    "APP_URL": "https://ops.skyfirst.io.vn",
+    "SUPPORT_EMAIL": "support@skyfirst.io.vn",
+    "SESSION_DAYS": "14"
+  },
+  "d1_databases": [
+    { "binding": "OPS_DB", "database_name": "ops", "database_id": "07072e1e-e1d2-4d91-a262-a91a0e2fadd9", "migrations_dir": "migrations" },
+    { "binding": "SLC_DB", "database_name": "skyfirsthoctap", "database_id": "6fd6a6c3-aae6-4b11-89e0-8e13a0e27d3c" },
+    { "binding": "MEMBER_DB", "database_name": "tk", "database_id": "ff630699-cc44-471d-9507-aa94c84468fb" },
+    { "binding": "TNV_DB", "database_name": "tnv-sfec", "database_id": "d939abd6-c877-4234-be69-60b5a69d52a8" },
+    { "binding": "CTT_DB", "database_name": "sfn-app-db", "database_id": "a59afb69-f8fd-4c29-8afa-601d2cdfd1ed" },
+    { "binding": "WEB_DB", "database_name": "wed", "database_id": "942c7ed9-fd5e-458c-a71f-977269a4ec34" },
+    { "binding": "SFEC_DB", "database_name": "sfec-app-db", "database_id": "5df0669d-c747-4a62-9e24-ed672ea1e376" },
+    { "binding": "MAIL_DB", "database_name": "sky-first-mail", "database_id": "eda8015d-b594-4bab-a740-50554a6d5f74" }
+  ],
+  "r2_buckets": [
+    { "binding": "OPS_R2", "bucket_name": "ops" }
+  ],
+  "triggers": {
+    "crons": ["15 0 * * *"]
+  },
+  "observability": { "enabled": true }
+}
