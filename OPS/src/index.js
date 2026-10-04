@@ -18,29 +18,7 @@ async function ensureOpsSchema(env) {
   schemaReady = true;
 }
 
-async function sourceReadiness(env) {
-  const dbs = [
-    ['OPS_DB','ops'],['SLC_DB','slc'],['MEMBER_DB','member'],['TNV_DB','tnv'],
-    ['CTT_DB','ctt'],['WEB_DB','web'],['SFEC_DB','sfec'],['MAIL_DB','mail']
-  ];
-  const databases = [];
-  for (const [bindingName, service] of dbs) {
-    const db = env?.[bindingName];
-    if (!db) { databases.push({ binding:bindingName, service, ok:false, error:'BINDING_MISSING' }); continue; }
-    try {
-      const row = await db.prepare('SELECT 1 AS ok').first();
-      databases.push({ binding:bindingName, service, ok:Number(row?.ok||0)===1, error:null });
-    } catch (e) {
-      databases.push({ binding:bindingName, service, ok:false, error:String(e?.message||e).slice(0,160) });
-    }
-  }
-  let r2 = { binding:'OPS_R2', ok:Boolean(env?.OPS_R2), error: env?.OPS_R2 ? null : 'BINDING_MISSING' };
-  if (env?.OPS_R2) {
-    try { await env.OPS_R2.list({ limit:1 }); }
-    catch (e) { r2 = { binding:'OPS_R2', ok:false, error:String(e?.message||e).slice(0,160) }; }
-  }
-  return { databases, r2, ready: databases.every(x=>x.ok) && r2.ok };
-}
+async function sourceReadiness(env){const dbs=[['OPS_DB','ops'],['SLC_DB','slc'],['MEMBER_DB','member'],['TNV_DB','tnv'],['CTT_DB','ctt'],['WEB_DB','web'],['SFEC_DB','sfec'],['MAIL_DB','mail']];const services=[];for(const [bindingName,service] of dbs){const db=env?.[bindingName];if(!db){services.push({service,ok:false});continue;}try{const row=await db.prepare('SELECT 1 AS ok').first();services.push({service,ok:Number(row?.ok||0)===1});}catch{services.push({service,ok:false});}}let storage={ok:Boolean(env?.OPS_R2)};if(env?.OPS_R2){try{await env.OPS_R2.list({limit:1});storage={ok:true};}catch{storage={ok:false};}}return {services,storage,ready:services.every(x=>x.ok)&&storage.ok};}
 
 function routeMatch(path, prefix) { return path === prefix || path.startsWith(prefix + '/'); }
 function uuid() { return crypto.randomUUID(); }
@@ -189,9 +167,9 @@ function friendlyError(e) {
     AUTH_REQUIRED:'Bạn cần đăng nhập.', FORBIDDEN:'Bạn không có quyền thực hiện thao tác này.',
     CSRF_INVALID:'Phiên bảo mật không hợp lệ. Vui lòng tải lại trang.', BAD_ORIGIN:'Yêu cầu không hợp lệ.',
     INVALID_JSON:'Dữ liệu gửi lên không hợp lệ.', PAYLOAD_TOO_LARGE:'Dữ liệu gửi lên quá lớn.',
-    PASSWORD_HASH_FAILED:'Không thể tạo thông tin đăng nhập trên môi trường hiện tại.',
-    BOOTSTRAP_DB_WRITE_FAILED:'Không thể ghi tài khoản quản trị vào cơ sở dữ liệu.',
-    OPS_DB_BINDING_MISSING:'OPS_DB chưa được cấu hình cho môi trường này.'
+    PASSWORD_HASH_FAILED:'Chưa thể tạo thông tin đăng nhập. Vui lòng thử lại hoặc liên hệ hỗ trợ.',
+    BOOTSTRAP_DB_WRITE_FAILED:'Chưa thể tạo tài khoản quản trị. Vui lòng thử lại hoặc liên hệ hỗ trợ.',
+    OPS_DB_BINDING_MISSING:'Chưa thể kết nối dữ liệu vận hành. Vui lòng liên hệ quản trị hệ thống.'
   };
   return { code, message:known[code] || 'Không thể hoàn tất yêu cầu lúc này.' };
 }
@@ -299,7 +277,7 @@ async function scheduledSnapshot(env) {
 async function api(request, env) {
   const url=new URL(request.url), path=url.pathname;
   if (path!=='/api/health') await ensureOpsSchema(env);
-  if (path==='/api/health' && request.method==='GET') return json({ok:true,service:'sky-first-ops',time:nowIso(),version:'1.1.1'});
+  if (path==='/api/health' && request.method==='GET') return json({ok:true,service:'Trung tâm Điều hành Sky First'});
   if (path==='/api/setup/status' && request.method==='GET') return json({ok:true,...await setupStatus(env)});
   if (path==='/api/setup/bootstrap' && request.method==='POST') return bootstrap(request,env);
   if (path==='/api/auth/login' && request.method==='POST') return login(request,env);
@@ -334,7 +312,7 @@ async function api(request, env) {
   }
   if (path==='/api/system/integrations' && request.method==='GET') {
     requireCap(user,'ops.integrations.view');
-    return json({ok:true,items:SERVICES.map(s=>({id:s.id,name:s.name,url:s.url,health:s.health,database:s.id==='exam'? 'Dữ liệu kỳ thi thuộc SLC' : 'D1 binding riêng',mode:'read-only aggregation'}))});
+    return json({ok:true,items:SERVICES.map(s=>({id:s.id,name:s.name}))});
   }
   if (path==='/api/roles' && request.method==='GET') {
     requireCap(user,'ops.users.manage'); return json({ok:true,roles:Object.keys(ROLE_CAPABILITIES),role_capabilities:ROLE_CAPABILITIES});
