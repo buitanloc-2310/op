@@ -15,6 +15,14 @@ async function ensureOpsSchema(env) {
   if (!env?.OPS_DB) throw Object.assign(new Error('OPS_DB_BINDING_MISSING'), { status: 503 });
   const prepared = CORE_SCHEMA_STATEMENTS.map(sql => env.OPS_DB.prepare(sql));
   if (prepared.length) await env.OPS_DB.batch(prepared);
+
+  // Runtime-safe additive upgrades for databases created by older releases.
+  // CREATE TABLE IF NOT EXISTS does not add newly introduced columns.
+  const userCols = await env.OPS_DB.prepare(`PRAGMA table_info(ops_users)`).all();
+  const names = new Set((userCols?.results || []).map(x => x.name));
+  if (!names.has('must_change_password')) {
+    await env.OPS_DB.prepare(`ALTER TABLE ops_users ADD COLUMN must_change_password INTEGER NOT NULL DEFAULT 0`).run();
+  }
   schemaReady = true;
 }
 
