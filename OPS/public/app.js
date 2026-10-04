@@ -1,4 +1,4 @@
-const $ = (s, root=document) => root.querySelector(s);
+const $ = (s, root=document) => { const scope = typeof root === 'string' ? document.querySelector(root) : root; return scope?.querySelector ? scope.querySelector(s) : null; };
 const $$ = (s, root=document) => { const scope = typeof root === 'string' ? document.querySelector(root) : root; return scope ? [...scope.querySelectorAll(s)] : []; };
 const app = $('#app');
 const state = { user:null, csrf:null, catalog:[], services:[], overview:null, health:null, pending:[] };
