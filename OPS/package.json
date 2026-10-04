@@ -1,6 +1,6 @@
 {
   "name": "sky-first-operations-center",
-  "version": "1.2.0",
+  "version": "1.4.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -12,7 +12,8 @@
     "check": "node --check src/index.js && node --check src/security.js && node --check src/data.js && node --check src/catalog.js && node --check public/app.js",
     "validate": "npm run check && node scripts/validate.mjs",
     "validate:privacy": "node scripts/validate-privacy-ui.mjs",
-    "validate:all": "npm run validate && npm run validate:privacy"
+    "validate:all": "npm run validate && npm run validate:privacy && npm run validate:production",
+    "validate:production": "node scripts/validate-production.mjs"
   },
   "devDependencies": {
     "wrangler": "4.145.0"

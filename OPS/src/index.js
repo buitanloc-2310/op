@@ -210,6 +210,7 @@ async function alertsApi(request, env, user) {
   requireCap(user,'alerts.manage'); requireCsrf(request,user);
   if (request.method==='PATCH') {
     const b=await readJson(request), id=sanitizeText(b.id,80);
+    if(!id) return json({ok:false,error:'ID_REQUIRED'},400);
     await env.OPS_DB.prepare(`UPDATE ops_alerts SET status='acknowledged', acknowledged_by=?, acknowledged_at=?, updated_at=? WHERE id=?`).bind(user.id,nowIso(),nowIso(),id).run();
     await audit(env,request,user,'alert.acknowledge','alert',id,{});
     return json({ok:true});
@@ -238,6 +239,13 @@ async function usersApi(request, env, user) {
   if (request.method==='PATCH') {
     const b=await readJson(request), id=sanitizeText(b.id,80), role=VALID_ROLES.includes(b.role)?b.role:null, status=['active','disabled'].includes(b.status)?b.status:null;
     if(!id) return json({ok:false,error:'ID_REQUIRED'},400);
+    const target=await env.OPS_DB.prepare(`SELECT id,role,status FROM ops_users WHERE id=? LIMIT 1`).bind(id).first();
+    if(!target) return json({ok:false,error:'USER_NOT_FOUND'},404);
+    if(id===user.id && status==='disabled') return json({ok:false,error:'CANNOT_DISABLE_SELF'},400);
+    if(target.role==='super_admin' && (status==='disabled' || (role && role!=='super_admin'))) {
+      const row=await env.OPS_DB.prepare(`SELECT COUNT(*) AS n FROM ops_users WHERE role='super_admin' AND status='active'`).first();
+      if(Number(row?.n||0)<=1) return json({ok:false,error:'LAST_SUPER_ADMIN'},400);
+    }
     const caps=Array.isArray(b.capabilities)?JSON.stringify(b.capabilities):null;
     await env.OPS_DB.prepare(`UPDATE ops_users SET role=COALESCE(?,role), status=COALESCE(?,status), capabilities_json=COALESCE(?,capabilities_json), updated_at=? WHERE id=?`)
       .bind(role,status,caps,nowIso(),id).run();
@@ -286,6 +294,19 @@ async function api(request, env) {
   if (path==='/api/auth/me' && request.method==='GET') return user?json({ok:true,user:publicUser(user)}):json({ok:false,error:'AUTH_REQUIRED'},401);
   if (path==='/api/auth/logout' && request.method==='POST') { if(user) requireCsrf(request,user); return logout(request,env,user); }
   if (!user) return json({ok:false,error:'AUTH_REQUIRED'},401);
+  if (path==='/api/auth/change-password' && request.method==='POST') {
+    requireCsrf(request,user);
+    const b=await readJson(request), current=String(b.current_password||''), next=String(b.new_password||'');
+    if(next.length<12) return json({ok:false,error:'PASSWORD_TOO_SHORT'},400);
+    if(!(await verifyPassword(current,user))) return json({ok:false,error:'CURRENT_PASSWORD_INVALID'},400);
+    if(current===next) return json({ok:false,error:'PASSWORD_UNCHANGED'},400);
+    const hp=await hashPassword(next), now=nowIso();
+    await env.OPS_DB.prepare(`UPDATE ops_users SET password_hash=?,password_salt=?,password_iterations=?,must_change_password=0,updated_at=? WHERE id=?`).bind(hp.hash,hp.salt,hp.iterations,now,user.id).run();
+    await env.OPS_DB.prepare(`DELETE FROM ops_sessions WHERE user_id=? AND id<>?`).bind(user.id,user.session_id).run();
+    await audit(env,request,user,'auth.password_change','user',user.id,{});
+    const refreshed={...user,password_hash:hp.hash,password_salt:hp.salt,password_iterations:hp.iterations,must_change_password:0};
+    return json({ok:true,user:publicUser(refreshed)});
+  }
 
   if (path==='/api/overview' && request.method==='GET') { requireCap(user,'overview.view'); return json({ok:true,data:await collectOverview(env,user)}); }
   if (path==='/api/catalog' && request.method==='GET') return json({ok:true,services:SERVICES.filter(s=>visibleCatalog(user).some(x=>x.system===s.id)),modules:visibleCatalog(user)});

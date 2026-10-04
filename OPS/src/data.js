@@ -140,14 +140,15 @@ export async function collectOverview(env, user) {
 
   await Promise.all(jobs);
 
-  const val = (sys, key) => Number(out.systems?.[sys]?.[key] ?? 0) || 0;
+  const raw = (sys,key) => out.systems?.[sys]?.[key];
+  const sumKnown = pairs => { const values=pairs.map(([a,b])=>raw(a,b)); return values.some(v=>v===null||v===undefined) ? null : values.reduce((n,v)=>n+Number(v||0),0); };
   out.totals = {
-    people_and_accounts: val('slc','users') + val('member','people') + val('tnv','users') + val('ctt','people') + val('sfec','people'),
-    classes: val('slc','classes'),
-    exams: val('slc','exams'),
-    exam_attempts: val('slc','exam_attempts') + val('slc','guest_attempts'),
-    pending_work: val('member','pending_requests') + val('tnv','pending_applications') + val('ctt','pending_submissions') + val('ctt','pending_approvals') + val('sfec','pending_submissions') + val('sfec','pending_approvals'),
-    messages: val('mail','messages')
+    people_and_accounts: sumKnown([['slc','users'],['member','people'],['tnv','users'],['ctt','people'],['sfec','people']]),
+    classes: raw('slc','classes') ?? null,
+    exams: raw('slc','exams') ?? null,
+    exam_attempts: sumKnown([['slc','exam_attempts'],['slc','guest_attempts']]),
+    pending_work: sumKnown([['member','pending_requests'],['tnv','pending_applications'],['ctt','pending_submissions'],['ctt','pending_approvals'],['sfec','pending_submissions'],['sfec','pending_approvals']]),
+    messages: raw('mail','messages') ?? null
   };
   return out;
 }
