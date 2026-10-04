@@ -78,11 +78,12 @@ function renderApp(){
 
 async function loadCore(){
   const results=await Promise.allSettled([api('/api/catalog'),api('/api/overview'),api('/api/pending'),can('health.view')?api('/api/services/health'):Promise.resolve(null)]);
-  if(results[0].status==='fulfilled'){state.catalog=results[0].value.modules;state.services=results[0].value.services;}else{state.catalog=[];state.services=[];}
+  if(results[0].status==='fulfilled'){state.catalog=Array.isArray(results[0].value?.modules)?results[0].value.modules:[];state.services=Array.isArray(results[0].value?.services)?results[0].value.services:[];}else{state.catalog=[];state.services=[];}
   state.overview=results[1].status==='fulfilled'?results[1].value.data:null;
-  state.pending=results[2].status==='fulfilled'?results[2].value.items:[];
+  state.pending=results[2].status==='fulfilled'&&Array.isArray(results[2].value?.items)?results[2].value.items:[];
   state.health=results[3].status==='fulfilled'&&results[3].value?results[3].value.data:null;
-  renderOverview();renderCatalog();renderPending();renderSystems();
+  const safeRender=(fn,selector)=>{try{fn();}catch(e){console.error('OPS_RENDER_FAILED',fn.name,e);const root=$(selector);if(root)root.innerHTML=errorBox();}};
+  safeRender(renderOverview,'#page-overview');safeRender(renderCatalog,'#page-catalog');safeRender(renderPending,'#page-pending');safeRender(renderSystems,'#page-systems');
   if(results[1].status==='rejected') $('#page-overview').innerHTML=errorBox();
   if(results[2].status==='rejected') $('#page-pending').innerHTML=errorBox();
   if(can('health.view')&&results[3].status==='rejected') $('#page-systems').innerHTML=errorBox();
@@ -105,7 +106,7 @@ function renderOverview(){
 function pendingRows(items){return items?.length?items.map(x=>`<div class="row"><div class="row-main"><b>${esc(x.title)}</b><small>${esc(serviceName(x.system))}${x.created_at?' · '+esc(x.created_at):''}</small></div><span class="badge warn">${esc(statusName(x.status))}</span></div>`).join(''):'<div class="empty">Không có việc đang chờ xử lý.</div>';}
 function renderPending(){$('#page-pending').innerHTML=`<div class="card"><div class="card-head"><h3>Hàng đợi toàn hệ thống</h3><button class="btn ghost" id="refreshPending">Làm mới</button></div><div class="rows">${pendingRows(state.pending)}</div></div>`;$('#refreshPending')?.addEventListener('click',async()=>{const r=await api('/api/pending');state.pending=r.items;renderPending();renderOverview();});}
 
-function renderSystems(){const health=state.health?.services||[];$('#page-systems').innerHTML=`<div class="card"><div class="card-head"><h3>Tình trạng hoạt động</h3><button class="btn ghost" id="refreshHealth">Kiểm tra lại</button></div><div class="rows">${health.length?health.map(x=>`<div class="row"><div class="row-main"><b>${esc(x.service.name)}</b><small>${x.probe.ok?'Kết nối ổn định':'Cần kiểm tra kết nối'}</small></div><span class="badge ${x.probe.ok?'ok':'danger'}">${x.probe.ok?'Hoạt động':'Cần kiểm tra'}</span></div>`).join(''):'<div class="empty">Chưa có thông tin trạng thái.</div>'}</div></div>`;$('#refreshHealth')?.addEventListener('click',async()=>{const r=await api('/api/services/health');state.health=r.data;renderSystems();});}
+function renderSystems(){const health=Array.isArray(state.health?.services)?state.health.services:[];$('#page-systems').innerHTML=`<div class="card"><div class="card-head"><h3>Tình trạng hoạt động</h3><button class="btn ghost" id="refreshHealth">Kiểm tra lại</button></div><div class="rows">${health.length?health.map(x=>`<div class="row"><div class="row-main"><b>${esc(x?.service?.name||serviceName(x?.service?.id||x?.service_id||''))}</b><small>${x?.probe?.ok?'Kết nối ổn định':'Cần kiểm tra kết nối'}</small></div><span class="badge ${x?.probe?.ok?'ok':'danger'}">${x?.probe?.ok?'Hoạt động':'Cần kiểm tra'}</span></div>`).join(''):'<div class="empty">Chưa có thông tin trạng thái.</div>'}</div></div>`;$('#refreshHealth')?.addEventListener('click',async()=>{const r=await api('/api/services/health');state.health=r.data;renderSystems();});}
 
 function renderCatalog(){
   const systems=[...new Set(state.catalog.map(x=>x.system))],cats=[...new Set(state.catalog.map(x=>x.category))];
