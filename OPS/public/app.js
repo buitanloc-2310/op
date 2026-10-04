@@ -3,6 +3,8 @@ const $$ = (s, root=document) => { const scope = typeof root === 'string' ? docu
 const app = $('#app');
 const state = { user:null, csrf:null, catalog:[], services:[], overview:null, health:null, pending:[] };
 
+document.addEventListener('click',e=>{const b=e.target.closest?.('[data-retry-page]');if(b){e.preventDefault();location.reload();}});
+
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));}
 function fmt(n){if(n===null||n===undefined)return '—'; return Number(n).toLocaleString('vi-VN');}
 function capMatch(pattern,value){if(pattern==='*')return true; const re='^'+pattern.replace(/[.+?^${}()|[\]\\]/g,'\\$&').replace(/\*/g,'.*')+'$'; return new RegExp(re).test(value);}
@@ -14,7 +16,7 @@ function friendlyTerm(v){let s=String(v??'');const r=[[/\bcapabilit(?:y|ies)\b/g
 function metricName(v){const k=String(v||'').toLowerCase();const m={users:'Người dùng',accounts:'Tài khoản',members:'Thành viên',volunteers:'Tình nguyện viên',classes:'Lớp học',students:'Học viên',teachers:'Giáo viên',exams:'Kỳ thi',attempts:'Lượt dự thi',pending:'Đang chờ',tickets:'Yêu cầu hỗ trợ',posts:'Nội dung',emails:'Thư điện tử',certificates:'Chứng nhận'};return m[k]||friendlyTerm(String(v||'').replaceAll('_',' '));}
 function toast(msg){let t=$('.toast');if(t)t.remove();t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.append(t);setTimeout(()=>t.remove(),3500);}
 function userError(){return 'Không thể hoàn tất yêu cầu. Vui lòng thử lại.';}
-function errorBox(){return `<div class="notice error">Không thể tải dữ liệu. <button class="btn ghost" type="button" onclick="location.reload()">Thử lại</button></div>`;}
+function errorBox(){return `<div class="notice error">Không thể tải dữ liệu. <button class="btn ghost" type="button" data-retry-page>Thử lại</button></div>`;}
 
 async function api(path,opts={}){
   const method=(opts.method||'GET').toUpperCase();
@@ -35,7 +37,7 @@ async function init(){
     const st=await api('/api/setup/status');
     if(!st.initialized){renderSetup();return;}
     const me=await api('/api/auth/me'); state.user=me.user;state.csrf=me.user.csrf_token;if(state.user.must_change_password){renderForcedPassword();return;}renderApp();await loadCore();
-  }catch(e){if(e.status===401||e.message==='AUTH_REQUIRED')renderLogin();else{authShell('Trung tâm Điều hành Sky First','Không thể tải trang. Vui lòng thử lại.',`<div class="notice error">Đã xảy ra sự cố khi tải trang. <button class="btn ghost" type="button" onclick="location.reload()">Thử lại</button></div>`);}}
+  }catch(e){if(e.status===401||e.message==='AUTH_REQUIRED')renderLogin();else{authShell('Trung tâm Điều hành Sky First','Không thể tải trang. Vui lòng thử lại.',`<div class="notice error">Đã xảy ra sự cố khi tải trang. <button class="btn ghost" type="button" data-retry-page>Thử lại</button></div>`);}}
 }
 
 function renderSetup(){
