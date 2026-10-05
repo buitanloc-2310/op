@@ -9,7 +9,9 @@ function check(name, cond){checks.push([name,Boolean(cond)]); if(!cond) console.
 
 const cfg=JSON.parse(read('wrangler.jsonc'));
 const bindings=(cfg.d1_databases||[]).map(x=>x.binding);
-check('8 services registered', SERVICES.length===8);
+check('10 services registered', SERVICES.length===10);
+check('Xanh registered', SERVICES.some(x=>x.id==='xanh'));
+check('Research registered', SERVICES.some(x=>x.id==='research'));
 check('full capability catalog >= 120 modules', MODULES.length>=120);
 check('Pages output directory configured', cfg.pages_build_output_dir==='./public');
 check('Pages config has no Worker main', !('main' in cfg));

@@ -26,7 +26,21 @@ async function ensureOpsSchema(env) {
   readyDatabases.add(env.OPS_DB);
 }
 
-async function sourceReadiness(env){const dbs=[['OPS_DB','ops'],['SLC_DB','slc'],['MEMBER_DB','member'],['TNV_DB','tnv'],['CTT_DB','ctt'],['WEB_DB','web'],['SFEC_DB','sfec'],['MAIL_DB','mail']];const services=[];for(const [bindingName,service] of dbs){const db=env?.[bindingName];if(!db){services.push({service,ok:false});continue;}try{const row=await db.prepare('SELECT 1 AS ok').first();services.push({service,ok:Number(row?.ok||0)===1});}catch{services.push({service,ok:false});}}services.push({service:'exam',ok:Boolean(services.find(x=>x.service==='slc')?.ok),shared_with:'slc'});let storage={ok:Boolean(env?.OPS_R2)};if(env?.OPS_R2){try{await env.OPS_R2.list({limit:1});storage={ok:true};}catch{storage={ok:false};}}return {services,storage,ready:services.every(x=>x.ok)&&storage.ok};}
+async function sourceReadiness(env){
+  const dbs=[['OPS_DB','ops'],['SLC_DB','slc'],['MEMBER_DB','member'],['TNV_DB','tnv'],['CTT_DB','ctt'],['WEB_DB','web'],['SFEC_DB','sfec'],['MAIL_DB','mail']];
+  const services=[];
+  for(const [bindingName,service] of dbs){
+    const db=env?.[bindingName];
+    if(!db){services.push({service,ok:false,level:'binding',state:'unavailable'});continue;}
+    try{const row=await db.prepare('SELECT 1 AS ok').first();const ok=Number(row?.ok||0)===1;services.push({service,ok,level:'binding',state:ok?'binding_reachable':'unavailable'});}
+    catch{services.push({service,ok:false,level:'binding',state:'unavailable'});}
+  }
+  services.push({service:'exam',ok:Boolean(services.find(x=>x.service==='slc')?.ok),level:'shared_binding',state:'shared_with_slc',shared_with:'slc'});
+  for(const id of ['xanh','research']) services.push({service:id,ok:null,level:'catalog',state:'catalog_only'});
+  let storage={ok:Boolean(env?.OPS_R2)};if(env?.OPS_R2){try{await env.OPS_R2.list({limit:1});storage={ok:true};}catch{storage={ok:false};}}
+  const required=services.filter(x=>x.level!=='catalog');
+  return {services,storage,ready:required.every(x=>x.ok===true)&&storage.ok};
+}
 
 function requireRead(result){if(!result.ok) throw Object.assign(new Error('SOURCE_UNAVAILABLE'),{status:503});return result.data;}
 function accessFingerprint(user){return JSON.stringify(userCapabilities(user).slice().sort());}
@@ -380,7 +394,7 @@ async function api(request, env) {
   }
   if (path==='/api/system/integrations' && request.method==='GET') {
     requireCap(user,'ops.integrations.view');
-    return json({ok:true,items:SERVICES.map(s=>({id:s.id,name:s.name}))});
+    return json({ok:true,items:SERVICES.map(s=>({id:s.id,name:s.name,connection:s.data_mode||(['xanh','research'].includes(s.id)?'catalog':'d1'),health_kind:s.health_kind||'machine'}))});
   }
   if (path==='/api/roles' && request.method==='GET') {
     requireCap(user,'ops.users.manage'); return json({ok:true,roles:Object.keys(ROLE_CAPABILITIES),role_capabilities:ROLE_CAPABILITIES});

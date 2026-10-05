@@ -174,7 +174,10 @@ async function probe(url, timeoutMs = 4500) {
 
 export async function collectHealth(user) {
   const allowed = SERVICES.filter(s => hasSystem(user, s.id) || can(user, 'health.view') || can(user, 'health.*'));
-  const results = await Promise.all(allowed.map(async service => ({ service, probe: await probe(service.health) })));
+  const results = await Promise.all(allowed.map(async service => {
+    const probeResult = await probe(service.health);
+    return { service, probe: probeResult, status: probeResult.ok ? (service.health_kind === 'reachability' ? 'reachable' : 'healthy') : 'unavailable' };
+  }));
   return { generated_at: new Date().toISOString(), services: results };
 }
 

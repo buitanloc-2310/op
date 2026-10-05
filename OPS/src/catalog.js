@@ -6,7 +6,9 @@ export const SERVICES = [
   { id: 'ctt', name: 'Cổng Thông tin SFN', short: 'CTT', url: 'https://ctt.skyfirst.io.vn', health: 'https://ctt.skyfirst.io.vn/api/health', color: '#1363a7' },
   { id: 'web', name: 'Website chính Sky First', short: 'Website', url: 'https://skyfirst.io.vn', health: 'https://skyfirst.io.vn/', color: '#334155' },
   { id: 'sfec', name: 'The Sky First English Club', short: 'SFEC', url: 'https://sfec.skyfirst.io.vn', health: 'https://sfec.skyfirst.io.vn/api/health', color: '#147a9c' },
-  { id: 'mail', name: 'Sky First Mail', short: 'Mail', url: 'https://mail.skyfirst.io.vn', health: 'https://mail.skyfirst.io.vn/api/health', color: '#8b5cf6' }
+  { id: 'mail', name: 'Sky First Mail', short: 'Mail', url: 'https://mail.skyfirst.io.vn', health: 'https://mail.skyfirst.io.vn/api/health', health_kind: 'machine', data_mode: 'd1', color: '#8b5cf6' },
+  { id: 'xanh', name: 'Xanh Sky First', short: 'Xanh', url: 'https://xanh.skyfirst.io.vn', health: 'https://xanh.skyfirst.io.vn/', health_kind: 'reachability', data_mode: 'catalog', color: '#159a68' },
+  { id: 'research', name: 'Trung tâm Nghiên cứu Đổi mới & Sáng tạo Sky First', short: 'Research', url: 'https://research.skyfirst.io.vn', health: 'https://research.skyfirst.io.vn/', health_kind: 'reachability', data_mode: 'catalog', color: '#b45309' }
 ];
 
 const m = (system, id, name, description, category, path = '', manage = true) => ({
@@ -152,6 +154,14 @@ export const MODULES = [
   m('sfec','security','Auth, 2FA & session','Đăng nhập, 2FA, session và reset mật khẩu.','Bảo mật','#security'),
   m('sfec','settings','Cấu hình SFEC','Settings, terms, modules và cấu hình.','Hệ thống','#settings'),
 
+  // Xanh Sky First — catalog/deep-link only until a verified management API is available.
+  m('xanh','website','Website Xanh','Mở website Xanh Sky First. Trạng thái catalog không đồng nghĩa tích hợp quản trị.','Website','/',false),
+  m('xanh','cms','CMS Xanh','Mở khu vực quản trị nội dung Xanh khi tài khoản hệ thống đích cho phép. OPS không giả lập SSO.','Nội dung','/admin',false),
+
+  // Research & Innovation Center — catalog/deep-link only until a verified management API is available.
+  m('research','website','Website Trung tâm','Mở website Trung tâm Nghiên cứu Đổi mới & Sáng tạo Sky First.','Website','/',false),
+  m('research','cms','CMS Trung tâm','Mở khu vực quản trị nội dung Trung tâm khi tài khoản hệ thống đích cho phép. OPS không giả lập SSO.','Nội dung','/admin',false),
+
   // Mail
   m('mail','mailbox','Hộp thư','Inbox, Sent, Spam, Trash, Starred và mailbox summary.','Email','/'),
   m('mail','messages','Thư & hội thoại','Đọc thư, thread, trạng thái read/star và bulk actions.','Email','/'),
@@ -179,7 +189,7 @@ export const ROLE_CAPABILITIES = {
   system_admin: ['overview.view','health.*','alerts.*','incidents.*','reports.*','search.global','security.*','audit.*','ops.*','*.view','mail.system.manage','mail.adminusers.manage','mail.domains.manage','slc.system.manage','slc.security.manage'],
   education_admin: ['overview.view','health.view','alerts.view','reports.view','search.global','slc.*','exam.*','sfec.classes.*','sfec.attendance.*','sfec.certificates.view','ctt.classes.*'],
   hr_admin: ['overview.view','alerts.view','reports.view','search.global','member.*','tnv.*','ctt.hr.*','ctt.recruitment.*','ctt.approvals.*','ctt.certificates.*','sfec.people.*','sfec.recruitment.*'],
-  communications_admin: ['overview.view','reports.view','search.global','web.*','ctt.content.*','ctt.files.*','sfec.content.*','sfec.files.*'],
+  communications_admin: ['overview.view','reports.view','search.global','web.*','ctt.content.*','ctt.files.*','sfec.content.*','sfec.files.*','xanh.*.view','research.*.view'],
   auditor: ['overview.view','health.view','alerts.view','incidents.view','reports.view','search.global','audit.view','security.view','*.view'],
   viewer: ['overview.view','health.view']
 };
