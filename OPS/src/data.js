@@ -141,7 +141,7 @@ export async function collectOverview(env, user) {
   await Promise.all(jobs);
 
   const raw = (sys,key) => out.systems?.[sys]?.[key];
-  const sumKnown = pairs => { const values=pairs.map(([a,b])=>raw(a,b)); return values.some(v=>v===null||v===undefined) ? null : values.reduce((n,v)=>n+Number(v||0),0); };
+  const sumKnown = pairs => { const values=pairs.filter(([a])=>a in out.systems).map(([a,b])=>raw(a,b)); if(!values.length)return null; return values.some(v=>v===null||v===undefined) ? null : values.reduce((n,v)=>n+Number(v||0),0); };
   out.totals = {
     people_and_accounts: sumKnown([['slc','users'],['member','people'],['tnv','users'],['ctt','people'],['sfec','people']]),
     classes: raw('slc','classes') ?? null,
@@ -164,7 +164,9 @@ async function probe(url, timeoutMs = 4500) {
     if (ct.includes('application/json')) {
       try { detail = await r.json(); } catch {}
     }
-    return { ok: r.ok, status: r.status, latency_ms: Date.now() - started, detail };
+    const expectedJson=new URL(url).pathname!=='/';
+    const validBody=!expectedJson || (detail && typeof detail==='object' && detail.ok!==false && detail.status!=='error');
+    return { ok: r.ok && Boolean(validBody), status: r.status, latency_ms: Date.now() - started, detail };
   } catch (e) {
     return { ok: false, status: 0, latency_ms: Date.now() - started, error: e?.name === 'AbortError' ? 'TIMEOUT' : String(e?.message || e).slice(0, 160) };
   } finally { clearTimeout(timer); }
@@ -178,6 +180,7 @@ export async function collectHealth(user) {
 
 export async function collectPending(env, user) {
   const items = [];
+  const unavailable = [];
   const pushRows = (system, type, rows, titleField, statusField = 'status') => {
     for (const row of rows || []) items.push({ system, type, id: row.id, title: row[titleField] || row.id, status: row[statusField] || 'pending', due_at: row.due_at || null, created_at: row.created_at || null });
   };
@@ -185,35 +188,42 @@ export async function collectPending(env, user) {
   const jobs = [];
   if (can(user, 'member.accountrequests.view')) jobs.push((async()=>{
     const r = await safeAll(env.MEMBER_DB, `SELECT id, full_name, status, created_at FROM account_requests WHERE status IN ('pending','new','submitted') ORDER BY created_at DESC LIMIT 25`);
+    if(!r.ok) unavailable.push('Nguồn dữ liệu chưa sẵn sàng');
     pushRows('member','account_request',r.data,'full_name');
   })());
   if (can(user, 'tnv.applications.view')) jobs.push((async()=>{
     const r = await safeAll(env.TNV_DB, `SELECT id, full_name, status, created_at FROM volunteer_applications WHERE status IN ('pending','new','submitted') ORDER BY created_at DESC LIMIT 25`);
+    if(!r.ok) unavailable.push('Nguồn dữ liệu chưa sẵn sàng');
     pushRows('tnv','volunteer_application',r.data,'full_name');
   })());
   if (can(user, 'ctt.approvals.view')) jobs.push((async()=>{
     const r = await safeAll(env.CTT_DB, `SELECT id, entity_type AS title, status, due_at, created_at FROM approvals WHERE status IN ('pending','waiting') ORDER BY created_at DESC LIMIT 25`);
+    if(!r.ok) unavailable.push('Nguồn dữ liệu chưa sẵn sàng');
     pushRows('ctt','approval',r.data,'title');
   })());
   if (can(user, 'ctt.recruitment.view')) jobs.push((async()=>{
     const r = await safeAll(env.CTT_DB, `SELECT id, full_name, status, created_at FROM submissions WHERE status IN ('pending','new','submitted') ORDER BY created_at DESC LIMIT 25`);
+    if(!r.ok) unavailable.push('Nguồn dữ liệu chưa sẵn sàng');
     pushRows('ctt','submission',r.data,'full_name');
   })());
   if (can(user, 'sfec.approvals.view')) jobs.push((async()=>{
     const r = await safeAll(env.SFEC_DB, `SELECT id, entity_type AS title, status, due_at, created_at FROM approvals WHERE status IN ('pending','waiting') ORDER BY created_at DESC LIMIT 25`);
+    if(!r.ok) unavailable.push('Nguồn dữ liệu chưa sẵn sàng');
     pushRows('sfec','approval',r.data,'title');
   })());
   if (can(user, 'sfec.recruitment.view')) jobs.push((async()=>{
     const r = await safeAll(env.SFEC_DB, `SELECT id, full_name, status, created_at FROM submissions WHERE status IN ('pending','new','submitted') ORDER BY created_at DESC LIMIT 25`);
+    if(!r.ok) unavailable.push('Nguồn dữ liệu chưa sẵn sàng');
     pushRows('sfec','submission',r.data,'full_name');
   })());
   if (can(user, 'slc.support.view')) jobs.push((async()=>{
     const r = await safeAll(env.SLC_DB, `SELECT id, subject, status, created_at FROM support_tickets WHERE status NOT IN ('closed','resolved') ORDER BY created_at DESC LIMIT 25`);
+    if(!r.ok) unavailable.push('Nguồn dữ liệu chưa sẵn sàng');
     pushRows('slc','support_ticket',r.data,'subject');
   })());
   await Promise.all(jobs);
   items.sort((a,b)=>String(b.created_at||'').localeCompare(String(a.created_at||'')));
-  return items.slice(0, 100);
+  return {items:items.slice(0,100),partial:unavailable.length>0,unavailable_sources:unavailable.length};
 }
 
 function maskEmail(email) {
@@ -225,10 +235,11 @@ function maskEmail(email) {
 export async function globalSearch(env, user, query) {
   const q = String(query || '').trim().toLowerCase();
   if (q.length < 2) return [];
-  const like = `%${q.replace(/[%_]/g, '')}%`;
+  const cleaned=q.replace(/[%_]/g,'').slice(0,120); if(cleaned.length<2)return [];
+  const like = `%${cleaned}%`;
   const results = [];
   const add = (system, type, rows, label, emailKey = 'email') => {
-    for (const row of rows || []) results.push({ system, type, id: row.id, label: row[label] || row.id, secondary: row[emailKey] ? maskEmail(row[emailKey]) : (row.status || '') });
+    for (const row of rows || []) results.push({ system, type, id: row.id, label: label==='email'?maskEmail(row[label]):(row[label] || row.id), secondary: row[emailKey] ? (emailKey==='code'?row[emailKey]:maskEmail(row[emailKey])) : (row.status || '') });
   };
   const jobs = [];
   if (can(user, 'slc.users.view')) jobs.push((async()=>{ const r=await safeAll(env.SLC_DB, `SELECT id, full_name, email, status FROM users WHERE lower(full_name) LIKE ? OR lower(email) LIKE ? LIMIT 12`,[like,like]); add('slc','user',r.data,'full_name'); })());
@@ -277,8 +288,10 @@ export async function collectSecurity(env, user) {
 
 export async function collectDataQuality(env, user) {
   const issues = [];
+  let skipped=0,checked=0;
   const add = (system, code, countValue, severity, title) => {
-    if (countValue === null || Number(countValue) <= 0) return;
+    if (countValue === null) {skipped++;return;} checked++;
+    if (Number(countValue) <= 0) return;
     issues.push({ system, code, count:Number(countValue), severity, title });
   };
   const jobs=[];
@@ -299,5 +312,5 @@ export async function collectDataQuality(env, user) {
   })());
   await Promise.all(jobs);
   issues.sort((a,b)=>({critical:0,high:1,medium:2,low:3}[a.severity]-({critical:0,high:1,medium:2,low:3}[b.severity])));
-  return { generated_at:new Date().toISOString(), issues };
+  return { generated_at:new Date().toISOString(), issues,checked,skipped,partial:skipped>0 };
 }

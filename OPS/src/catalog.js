@@ -194,10 +194,11 @@ export function userCapabilities(user) {
   const base = ROLE_CAPABILITIES[user?.role] || ROLE_CAPABILITIES.viewer;
   let extra = [];
   try { extra = JSON.parse(user?.capabilities_json || '[]'); } catch {}
-  return [...new Set([...base, ...(Array.isArray(extra) ? extra : [])])];
+  return [...new Set([...base, ...(Array.isArray(extra) ? extra.filter(x=>typeof x==='string') : [])])];
 }
 
 export function can(user, capability) {
+  if (!user) return false;
   return userCapabilities(user).some(p => globMatch(p, capability));
 }
 

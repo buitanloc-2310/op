@@ -1,40 +1,9 @@
-# OPS Integration Audit — baseline 2026-10-03
+# Phạm vi tích hợp 2.0.0
 
-Bản OPS này được thiết kế từ 8 source production được cung cấp cùng ngày.
+OPS_DB lưu người dùng, phiên, sự cố, cảnh báo, audit và báo cáo. OPS_R2 nhận bản sao JSON. Bảy database nguồn chỉ được đọc bởi src/data.js. Exam dùng dữ liệu SLC; trạng thái kết nối dữ liệu của Exam kế thừa SLC, còn health HTTP kiểm tra riêng.
 
-| Hệ thống | Runtime | D1 | R2 / storage | Cách OPS kết nối |
-|---|---|---|---|---|
-| SLC | Cloudflare Pages/Functions | `skyfirsthoctap` | `skyfirsthoctap` | D1 read-only + health |
-| Exam | Cloudflare Worker/assets | Không có DB riêng | Static assets | HTTP health; dữ liệu attempt/exam đọc từ SLC |
-| Member | Cloudflare Worker | `tk` | `tksfn` | D1 read-only |
-| TNV | Cloudflare Worker | `tnv-sfec` | `tnv-sfn-files` | D1 read-only + health/status |
-| CTT | Cloudflare Worker | `sfn-app-db` | `sfn-app-files` | D1 read-only + health |
-| Website | Cloudflare Pages | `wed` | `wed` | D1 read-only + root health probe |
-| SFEC | Cloudflare Worker | `sfec-app-db` | `sfec-app-files` | D1 read-only + health |
-| Mail | Cloudflare Worker | `sky-first-mail` | `sky-first-mail-storage` | D1 read-only + health |
+Có 8 dịch vụ và danh mục liên kết chức năng kế thừa. Việc xuất hiện trong catalog không chứng minh chức năng đích đã hoạt động; quyền OPS không phải SSO hoặc quyền hệ thống đích.
 
-## Capability catalog
+Trang kết nối chỉ thử SELECT 1 và R2 list. Khi kiểm tra dữ liệu nguồn lỗi, KPI có thể là null; danh sách chờ báo partial; kiểm tra chất lượng báo skipped. Đối chiếu schema nguồn là công việc bắt buộc trước nghiệm thu production. Chưa kết nối D1/R2 thật trong vòng sửa này.
 
-Catalog hiện đăng ký 135 module/chức năng cấp cao từ 8 hệ thống. Super Admin nhận toàn bộ; các role khác được lọc server-side trước khi trả về frontend.
-
-## Những gì đã triển khai trong OPS v1
-
-- Auth riêng cho Trung tâm Điều hành.
-- One-time setup bằng `SETUP_SECRET`.
-- RBAC/capability visibility.
-- Dashboard KPI từ 7 D1 nguồn.
-- Health check 8 hệ thống.
-- Pending-work aggregation.
-- Global search có masking email.
-- Capability Catalog + deep link về hệ thống nguồn.
-- Security summary.
-- Incident Center.
-- Audit Center của OPS.
-- Snapshot KPI lưu D1 + R2 Ops.
-- Quản lý tài khoản/role OPS.
-- Integration registry.
-- Daily scheduled snapshot.
-
-## Cố ý chưa làm write-through vào source systems
-
-Không proxy CREATE/UPDATE/DELETE trực tiếp vào SLC/Member/TNV/CTT/SFEC/Mail/Website trong v1. Việc này là chủ ý an toàn: các hệ thống đang có auth, validation, audit và workflow khác nhau. OPS hiển thị toàn bộ capability và deep-link về source app, trong khi đọc tổng hợp qua D1. Khi cần write-through, mỗi hệ thống nên có service endpoint nội bộ có scope riêng thay vì cho OPS ghi thẳng database.
+Chi tiết vấn đề và sửa chữa trong UPGRADE-AUDIT.md; kết quả kiểm thử trong TEST-REPORT.md.

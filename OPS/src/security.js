@@ -49,7 +49,7 @@ export function parseCookies(request) {
     if (i < 0) continue;
     const k = part.slice(0, i).trim();
     const v = part.slice(i + 1).trim();
-    if (k) out[k] = decodeURIComponent(v);
+    if (k) { try { out[k] = decodeURIComponent(v); } catch { /* Ignore malformed cookies. */ } }
   }
   return out;
 }
@@ -88,10 +88,14 @@ export function json(data, status = 200, headers = {}) {
 export async function readJson(request, maxBytes = 64 * 1024) {
   const len = Number(request.headers.get('content-length') || 0);
   if (len > maxBytes) throw Object.assign(new Error('PAYLOAD_TOO_LARGE'), { status: 413 });
-  const text = await request.text();
-  if (text.length > maxBytes) throw Object.assign(new Error('PAYLOAD_TOO_LARGE'), { status: 413 });
+  const reader = request.body?.getReader();
+  const chunks = []; let size = 0;
+  if (reader) { while (true) { const {done,value}=await reader.read(); if(done) break; size+=value.byteLength; if(size>maxBytes){await reader.cancel();throw Object.assign(new Error('PAYLOAD_TOO_LARGE'),{status:413});} chunks.push(value); } }
+  const bytes = new Uint8Array(size); let offset=0; for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.byteLength;}
+  const text = new TextDecoder().decode(bytes);
+  if (size > maxBytes) throw Object.assign(new Error('PAYLOAD_TOO_LARGE'), { status: 413 });
   if (!text) return {};
-  try { return JSON.parse(text); } catch { throw Object.assign(new Error('INVALID_JSON'), { status: 400 }); }
+  try { const value=JSON.parse(text); if(!value || typeof value!=='object' || Array.isArray(value)) throw new Error(); return value; } catch { throw Object.assign(new Error('INVALID_JSON'), { status: 400 }); }
 }
 
 export function clientIp(request) {

@@ -1,6 +1,6 @@
 {
   "name": "sky-first-operations-center",
-  "version": "1.4.2",
+  "version": "2.0.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -13,7 +13,10 @@
     "validate": "npm run check && node scripts/validate.mjs",
     "validate:privacy": "node scripts/validate-privacy-ui.mjs",
     "validate:all": "npm run validate && npm run validate:privacy && npm run validate:production",
-    "validate:production": "node scripts/validate-production.mjs"
+    "validate:production": "node scripts/validate-production.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "dev:local": "node scripts/local-server.mjs",
+    "deploy:scheduler": "wrangler deploy --config wrangler.scheduler.jsonc"
   },
   "devDependencies": {
     "wrangler": "4.145.0"

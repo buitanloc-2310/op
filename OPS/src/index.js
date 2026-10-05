@@ -9,9 +9,9 @@ import {
 const SESSION_COOKIE = 'ops_session';
 const VALID_ROLES = Object.keys(ROLE_CAPABILITIES);
 
-let schemaReady = false;
+const readyDatabases = new WeakSet();
 async function ensureOpsSchema(env) {
-  if (schemaReady) return;
+  if (env?.OPS_DB && readyDatabases.has(env.OPS_DB)) return;
   if (!env?.OPS_DB) throw Object.assign(new Error('OPS_DB_BINDING_MISSING'), { status: 503 });
   const prepared = CORE_SCHEMA_STATEMENTS.map(sql => env.OPS_DB.prepare(sql));
   if (prepared.length) await env.OPS_DB.batch(prepared);
@@ -23,11 +23,13 @@ async function ensureOpsSchema(env) {
   if (!names.has('must_change_password')) {
     await env.OPS_DB.prepare(`ALTER TABLE ops_users ADD COLUMN must_change_password INTEGER NOT NULL DEFAULT 0`).run();
   }
-  schemaReady = true;
+  readyDatabases.add(env.OPS_DB);
 }
 
-async function sourceReadiness(env){const dbs=[['OPS_DB','ops'],['SLC_DB','slc'],['MEMBER_DB','member'],['TNV_DB','tnv'],['CTT_DB','ctt'],['WEB_DB','web'],['SFEC_DB','sfec'],['MAIL_DB','mail']];const services=[];for(const [bindingName,service] of dbs){const db=env?.[bindingName];if(!db){services.push({service,ok:false});continue;}try{const row=await db.prepare('SELECT 1 AS ok').first();services.push({service,ok:Number(row?.ok||0)===1});}catch{services.push({service,ok:false});}}let storage={ok:Boolean(env?.OPS_R2)};if(env?.OPS_R2){try{await env.OPS_R2.list({limit:1});storage={ok:true};}catch{storage={ok:false};}}return {services,storage,ready:services.every(x=>x.ok)&&storage.ok};}
+async function sourceReadiness(env){const dbs=[['OPS_DB','ops'],['SLC_DB','slc'],['MEMBER_DB','member'],['TNV_DB','tnv'],['CTT_DB','ctt'],['WEB_DB','web'],['SFEC_DB','sfec'],['MAIL_DB','mail']];const services=[];for(const [bindingName,service] of dbs){const db=env?.[bindingName];if(!db){services.push({service,ok:false});continue;}try{const row=await db.prepare('SELECT 1 AS ok').first();services.push({service,ok:Number(row?.ok||0)===1});}catch{services.push({service,ok:false});}}services.push({service:'exam',ok:Boolean(services.find(x=>x.service==='slc')?.ok),shared_with:'slc'});let storage={ok:Boolean(env?.OPS_R2)};if(env?.OPS_R2){try{await env.OPS_R2.list({limit:1});storage={ok:true};}catch{storage={ok:false};}}return {services,storage,ready:services.every(x=>x.ok)&&storage.ok};}
 
+function requireRead(result){if(!result.ok) throw Object.assign(new Error('SOURCE_UNAVAILABLE'),{status:503});return result.data;}
+function accessFingerprint(user){return JSON.stringify(userCapabilities(user).slice().sort());}
 function routeMatch(path, prefix) { return path === prefix || path.startsWith(prefix + '/'); }
 function uuid() { return crypto.randomUUID(); }
 
@@ -37,7 +39,7 @@ async function audit(env, request, user, action, targetType = null, targetId = n
       (id, actor_user_id, actor_email, action, target_type, target_id, metadata_json, ip_hash, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
       .bind(uuid(), user?.id || null, user?.email || null, action, targetType, targetId, JSON.stringify(metadata || {}), await ipHash(request), nowIso()).run();
-  } catch {}
+  } catch {console.error('OPS_AUDIT_WRITE_FAILED');}
 }
 
 async function getUser(request, env, { touch = true } = {}) {
@@ -104,10 +106,11 @@ async function bootstrap(request, env) {
   }
   const id = uuid(); const now = nowIso();
   try {
-    await env.OPS_DB.prepare(`INSERT INTO ops_users
+    const inserted = await env.OPS_DB.prepare(`INSERT INTO ops_users
     (id,email,full_name,role,capabilities_json,password_hash,password_salt,password_iterations,status,created_at,updated_at)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?)`)
+    SELECT ?,?,?,?,?,?,?,?,?,?,? WHERE NOT EXISTS (SELECT 1 FROM ops_users)`)
     .bind(id,email,fullName,'super_admin','[]',hp.hash,hp.salt,hp.iterations,'active',now,now).run();
+    if (!inserted.meta?.changes) return json({ok:false,error:'ALREADY_INITIALIZED'},409);
   } catch (e) {
     console.error('OPS_BOOTSTRAP_INSERT_FAILED', e?.stack || e);
     throw Object.assign(new Error('BOOTSTRAP_DB_WRITE_FAILED'), { status: 500 });
@@ -124,15 +127,13 @@ async function checkLoginRate(env, key) {
 }
 
 async function recordLoginFailure(env, key) {
-  const now = new Date();
-  const row = await env.OPS_DB.prepare(`SELECT * FROM ops_login_attempts WHERE key=?`).bind(key).first();
-  const windowStart = row?.window_started_at ? Date.parse(row.window_started_at) : 0;
-  const within = windowStart && (Date.now() - windowStart < 15*60*1000);
-  const count = within ? Number(row.count||0)+1 : 1;
-  const blocked = count >= 7 ? new Date(Date.now()+15*60*1000).toISOString() : null;
-  await env.OPS_DB.prepare(`INSERT INTO ops_login_attempts(key,count,window_started_at,blocked_until) VALUES(?,?,?,?)
-    ON CONFLICT(key) DO UPDATE SET count=excluded.count, window_started_at=excluded.window_started_at, blocked_until=excluded.blocked_until`)
-    .bind(key,count,within?row.window_started_at:now.toISOString(),blocked).run();
+  const now=nowIso(),cutoff=new Date(Date.now()-15*60*1000).toISOString(),blocked=new Date(Date.now()+15*60*1000).toISOString();
+  await env.OPS_DB.prepare(`INSERT INTO ops_login_attempts(key,count,window_started_at,blocked_until) VALUES(?,1,?,NULL)
+    ON CONFLICT(key) DO UPDATE SET
+    count=CASE WHEN window_started_at>? THEN count+1 ELSE 1 END,
+    blocked_until=CASE WHEN window_started_at>? AND count+1>=7 THEN ? ELSE NULL END,
+    window_started_at=CASE WHEN window_started_at>? THEN window_started_at ELSE excluded.window_started_at END`)
+    .bind(key,now,cutoff,cutoff,blocked,cutoff).run();
 }
 
 async function login(request, env) {
@@ -142,17 +143,22 @@ async function login(request, env) {
   const password = String(body.password || '');
   const ip = await ipHash(request);
   const key = await sha256(`${email}|${ip}`);
+  const ipKey='ip:'+ip;
+  const ipRate=await checkLoginRate(env,ipKey);
+  if(!ipRate.allowed)return json({ok:false,error:'LOGIN_RATE_LIMIT',retry_after:ipRate.retry_after},429);
   const rate = await checkLoginRate(env, key);
   if (!rate.allowed) return json({ ok:false, error:'LOGIN_RATE_LIMIT', retry_after:rate.retry_after }, 429);
   const user = await env.OPS_DB.prepare(`SELECT * FROM ops_users WHERE email=? COLLATE NOCASE LIMIT 1`).bind(email).first();
   if (!user || user.status !== 'active' || !(await verifyPassword(password, user))) {
     await recordLoginFailure(env,key);
+    await recordLoginFailure(env,ipKey);
     await audit(env,request,{email},'auth.login_failed','user',user?.id||null,{});
     return json({ ok:false, error:'LOGIN_INVALID' }, 401);
   }
   try { await env.OPS_DB.prepare(`DELETE FROM ops_login_attempts WHERE key=?`).bind(key).run(); } catch {}
   const token = randomToken(32), tokenHash = await sha256(token), csrf = randomToken(24);
-  const days = Math.min(30,Math.max(1,Number(env.SESSION_DAYS||14)));
+  const configuredDays=Number(env.SESSION_DAYS||14);
+  const days = Number.isFinite(configuredDays)?Math.min(30,Math.max(1,configuredDays)):14;
   const now=nowIso(), exp=addDaysIso(days), sid=uuid();
   await env.OPS_DB.prepare(`INSERT INTO ops_sessions(id,user_id,token_hash,csrf_token,expires_at,created_at,last_seen_at,user_agent,ip_hash)
     VALUES(?,?,?,?,?,?,?,?,?)`).bind(sid,user.id,tokenHash,csrf,exp,now,now,(request.headers.get('user-agent')||'').slice(0,500),ip).run();
@@ -170,13 +176,15 @@ async function logout(request, env, user) {
 }
 
 function friendlyError(e) {
-  const code = String(e?.message || 'INTERNAL_ERROR');
+  const rawCode = String(e?.message || 'INTERNAL_ERROR');
+  const code = /^[A-Z][A-Z_]+$/.test(rawCode)?rawCode:'INTERNAL_ERROR';
   const known = {
     AUTH_REQUIRED:'Bạn cần đăng nhập.', FORBIDDEN:'Bạn không có quyền thực hiện thao tác này.',
     CSRF_INVALID:'Phiên bảo mật không hợp lệ. Vui lòng tải lại trang.', BAD_ORIGIN:'Yêu cầu không hợp lệ.',
     INVALID_JSON:'Dữ liệu gửi lên không hợp lệ.', PAYLOAD_TOO_LARGE:'Dữ liệu gửi lên quá lớn.',
     PASSWORD_HASH_FAILED:'Chưa thể tạo thông tin đăng nhập. Vui lòng thử lại hoặc liên hệ hỗ trợ.',
     BOOTSTRAP_DB_WRITE_FAILED:'Chưa thể tạo tài khoản quản trị. Vui lòng thử lại hoặc liên hệ hỗ trợ.',
+    SOURCE_UNAVAILABLE:'Nguồn dữ liệu tạm thời không khả dụng.',
     OPS_DB_BINDING_MISSING:'Chưa thể kết nối dữ liệu vận hành. Vui lòng liên hệ quản trị hệ thống.'
   };
   return { code, message:known[code] || 'Không thể hoàn tất yêu cầu lúc này.' };
@@ -186,7 +194,7 @@ async function incidentsApi(request, env, user, url) {
   if (request.method === 'GET') {
     requireCap(user,'incidents.view');
     const r = await safeAll(env.OPS_DB,`SELECT * FROM ops_incidents ORDER BY CASE status WHEN 'open' THEN 0 WHEN 'investigating' THEN 1 ELSE 2 END, created_at DESC LIMIT 200`);
-    return json({ok:true,items:r.data});
+    return json({ok:true,items:requireRead(r)});
   }
   requireCap(user,'incidents.manage'); requireCsrf(request,user);
   if (request.method === 'POST') {
@@ -201,7 +209,8 @@ async function incidentsApi(request, env, user, url) {
   if (request.method === 'PATCH') {
     const b=await readJson(request), id=sanitizeText(b.id,80), status=['open','investigating','monitoring','resolved'].includes(b.status)?b.status:null;
     if (!id||!status) return json({ok:false,error:'INVALID_INCIDENT'},400);
-    await env.OPS_DB.prepare(`UPDATE ops_incidents SET status=?, resolved_at=CASE WHEN ?='resolved' THEN ? ELSE resolved_at END, updated_at=? WHERE id=?`)
+    if(!await env.OPS_DB.prepare('SELECT id FROM ops_incidents WHERE id=?').bind(id).first()) return json({ok:false,error:'NOT_FOUND'},404);
+    await env.OPS_DB.prepare(`UPDATE ops_incidents SET status=?, resolved_at=CASE WHEN ?='resolved' THEN ? ELSE NULL END, updated_at=? WHERE id=?`)
       .bind(status,status,nowIso(),nowIso(),id).run();
     await audit(env,request,user,'incident.update','incident',id,{status});
     return json({ok:true});
@@ -213,12 +222,15 @@ async function alertsApi(request, env, user) {
   if (request.method==='GET') {
     requireCap(user,'alerts.view');
     const r=await safeAll(env.OPS_DB,`SELECT * FROM ops_alerts ORDER BY CASE severity WHEN 'critical' THEN 0 WHEN 'high' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END, created_at DESC LIMIT 250`);
-    return json({ok:true,items:r.data});
+    return json({ok:true,items:requireRead(r)});
   }
   requireCap(user,'alerts.manage'); requireCsrf(request,user);
   if (request.method==='PATCH') {
     const b=await readJson(request), id=sanitizeText(b.id,80);
     if(!id) return json({ok:false,error:'ID_REQUIRED'},400);
+    const alertRow=await env.OPS_DB.prepare('SELECT status FROM ops_alerts WHERE id=?').bind(id).first();
+    if(!alertRow) return json({ok:false,error:'NOT_FOUND'},404);
+    if(alertRow.status==='resolved') return json({ok:false,error:'ALREADY_RESOLVED'},409);
     await env.OPS_DB.prepare(`UPDATE ops_alerts SET status='acknowledged', acknowledged_by=?, acknowledged_at=?, updated_at=? WHERE id=?`).bind(user.id,nowIso(),nowIso(),id).run();
     await audit(env,request,user,'alert.acknowledge','alert',id,{});
     return json({ok:true});
@@ -228,9 +240,11 @@ async function alertsApi(request, env, user) {
 
 async function usersApi(request, env, user) {
   requireCap(user,'ops.users.manage');
+  // Only the root role may delegate roles or capabilities.
+  if (request.method!=='GET' && user.role!=='super_admin') return json({ok:false,error:'FORBIDDEN'},403);
   if (request.method==='GET') {
     const r=await safeAll(env.OPS_DB,`SELECT id,email,full_name,role,capabilities_json,status,must_change_password,created_at,updated_at,last_login_at FROM ops_users ORDER BY created_at DESC`);
-    return json({ok:true,items:r.data});
+    return json({ok:true,items:requireRead(r)});
   }
   requireCsrf(request,user);
   if (request.method==='POST') {
@@ -249,6 +263,7 @@ async function usersApi(request, env, user) {
     if(!id) return json({ok:false,error:'ID_REQUIRED'},400);
     const target=await env.OPS_DB.prepare(`SELECT id,role,status FROM ops_users WHERE id=? LIMIT 1`).bind(id).first();
     if(!target) return json({ok:false,error:'USER_NOT_FOUND'},404);
+    if(id===user.id && ((role && role!==user.role) || Array.isArray(b.capabilities))) return json({ok:false,error:'CANNOT_CHANGE_OWN_ACCESS'},400);
     if(id===user.id && status==='disabled') return json({ok:false,error:'CANNOT_DISABLE_SELF'},400);
     if(target.role==='super_admin' && (status==='disabled' || (role && role!=='super_admin'))) {
       const row=await env.OPS_DB.prepare(`SELECT COUNT(*) AS n FROM ops_users WHERE role='super_admin' AND status='active'`).first();
@@ -257,7 +272,7 @@ async function usersApi(request, env, user) {
     const caps=Array.isArray(b.capabilities)?JSON.stringify(b.capabilities):null;
     await env.OPS_DB.prepare(`UPDATE ops_users SET role=COALESCE(?,role), status=COALESCE(?,status), capabilities_json=COALESCE(?,capabilities_json), updated_at=? WHERE id=?`)
       .bind(role,status,caps,nowIso(),id).run();
-    if(status==='disabled') await env.OPS_DB.prepare(`DELETE FROM ops_sessions WHERE user_id=?`).bind(id).run();
+    if(status==='disabled' || role || caps!==null) await env.OPS_DB.prepare(`DELETE FROM ops_sessions WHERE user_id=?`).bind(id).run();
     await audit(env,request,user,'ops_user.update','user',id,{role,status});
     return json({ok:true});
   }
@@ -266,32 +281,35 @@ async function usersApi(request, env, user) {
 
 async function reportSnapshot(request, env, user) {
   requireCap(user,'reports.manage'); requireCsrf(request,user);
-  const payload = { overview:await collectOverview(env,user), health:await collectHealth(user), pending:await collectPending(env,user), generated_at:nowIso(), generated_by:user.email };
+  const payload = { overview:await collectOverview(env,user), health:await collectHealth(user), pending:await collectPending(env,user), generated_at:nowIso(), generated_by:user.email, access_fingerprint:accessFingerprint(user) };
   const id=uuid(), now=nowIso(), key=`reports/${now.slice(0,10)}/${id}.json`;
   await env.OPS_DB.prepare(`INSERT INTO ops_kpi_snapshots(id,captured_at,payload_json,created_at) VALUES(?,?,?,?)`).bind(id,now,JSON.stringify(payload),now).run();
-  if (env.OPS_R2) await env.OPS_R2.put(key,JSON.stringify(payload,null,2),{httpMetadata:{contentType:'application/json'}});
+  let archived=false;
+  if (env.OPS_R2) {try{await env.OPS_R2.put(key,JSON.stringify(payload,null,2),{httpMetadata:{contentType:'application/json'}});archived=true;}catch(e){console.error('OPS_ARCHIVE_FAILED');}}
   await audit(env,request,user,'report.snapshot','report',id,{key});
-  return json({ok:true,id,key,captured_at:now},201);
+  return json({ok:true,id,key:archived?key:null,archived,captured_at:now},201);
 }
 
 async function scheduledSnapshot(env) {
+  await ensureOpsSchema(env);
   const fakeUser={role:'super_admin',capabilities_json:'[]'};
   const health=await collectHealth(fakeUser);
   const payload={overview:await collectOverview(env,fakeUser),health,data_quality:await collectDataQuality(env,fakeUser),generated_at:nowIso(),automated:true};
   const id=uuid(), now=nowIso(), key=`snapshots/${now.slice(0,10)}/${id}.json`;
   await env.OPS_DB.prepare(`INSERT INTO ops_kpi_snapshots(id,captured_at,payload_json,created_at) VALUES(?,?,?,?)`).bind(id,now,JSON.stringify(payload),now).run();
-  if(env.OPS_R2) await env.OPS_R2.put(key,JSON.stringify(payload,null,2),{httpMetadata:{contentType:'application/json'}});
+  if(env.OPS_R2){try{await env.OPS_R2.put(key,JSON.stringify(payload,null,2),{httpMetadata:{contentType:'application/json'}});}catch{console.error('OPS_ARCHIVE_FAILED');}}
   for (const item of health.services || []) {
     if (item.probe?.ok) {
-      try { await env.OPS_DB.prepare(`UPDATE ops_alerts SET status='resolved', updated_at=? WHERE source='health' AND alert_key=? AND status!='resolved'`).bind(now,`service:${item.service.id}`).run(); } catch {}
+      try { await env.OPS_DB.prepare(`UPDATE ops_alerts SET status='resolved', updated_at=? WHERE source='health' AND alert_key=? AND status!='resolved'`).bind(now,`service:${item.service.id}`).run(); } catch {console.error('OPS_ALERT_RESOLVE_FAILED');}
     } else {
-      try { await env.OPS_DB.prepare(`INSERT INTO ops_alerts(id,source,alert_key,severity,title,detail,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?) ON CONFLICT(source,alert_key) DO UPDATE SET severity=excluded.severity,title=excluded.title,detail=excluded.detail,status='open',updated_at=excluded.updated_at`).bind(uuid(),'health',`service:${item.service.id}`,'high',`${item.service.name} không phản hồi bình thường`,JSON.stringify(item.probe||{}),'open',now,now).run(); } catch {}
+      try { await env.OPS_DB.prepare(`INSERT INTO ops_alerts(id,source,alert_key,severity,title,detail,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?) ON CONFLICT(source,alert_key) WHERE alert_key IS NOT NULL DO UPDATE SET severity=excluded.severity,title=excluded.title,detail=excluded.detail,status=CASE WHEN ops_alerts.status='resolved' THEN 'open' ELSE ops_alerts.status END,updated_at=excluded.updated_at`).bind(uuid(),'health',`service:${item.service.id}`,'high',`${item.service.name} không phản hồi bình thường`,JSON.stringify(item.probe||{}),'open',now,now).run(); } catch {console.error('OPS_ALERT_UPSERT_FAILED');}
     }
   }
 }
 
 async function api(request, env) {
   const url=new URL(request.url), path=url.pathname;
+  if (!['GET','HEAD','OPTIONS'].includes(request.method) && !requireSameOrigin(request)) return json({ok:false,error:'BAD_ORIGIN'},403);
   if (path!=='/api/health') await ensureOpsSchema(env);
   if (path==='/api/health' && request.method==='GET') return json({ok:true,service:'Trung tâm Điều hành Sky First'});
   if (path==='/api/setup/status' && request.method==='GET') return json({ok:true,...await setupStatus(env)});
@@ -302,6 +320,7 @@ async function api(request, env) {
   if (path==='/api/auth/me' && request.method==='GET') return user?json({ok:true,user:publicUser(user)}):json({ok:false,error:'AUTH_REQUIRED'},401);
   if (path==='/api/auth/logout' && request.method==='POST') { if(user) requireCsrf(request,user); return logout(request,env,user); }
   if (!user) return json({ok:false,error:'AUTH_REQUIRED'},401);
+  if (user.must_change_password && path!=='/api/auth/change-password') return json({ok:false,error:'PASSWORD_CHANGE_REQUIRED'},403);
   if (path==='/api/auth/change-password' && request.method==='POST') {
     requireCsrf(request,user);
     const b=await readJson(request), current=String(b.current_password||''), next=String(b.new_password||'');
@@ -319,7 +338,7 @@ async function api(request, env) {
   if (path==='/api/overview' && request.method==='GET') { requireCap(user,'overview.view'); return json({ok:true,data:await collectOverview(env,user)}); }
   if (path==='/api/catalog' && request.method==='GET') return json({ok:true,services:SERVICES.filter(s=>visibleCatalog(user).some(x=>x.system===s.id)),modules:visibleCatalog(user)});
   if (path==='/api/services/health' && request.method==='GET') { requireCap(user,'health.view'); return json({ok:true,data:await collectHealth(user)}); }
-  if (path==='/api/pending' && request.method==='GET') { requireCap(user,'overview.view'); return json({ok:true,items:await collectPending(env,user)}); }
+  if (path==='/api/pending' && request.method==='GET') { requireCap(user,'overview.view'); return json({ok:true,...await collectPending(env,user)}); }
   if (path==='/api/search' && request.method==='GET') { requireCap(user,'search.global'); return json({ok:true,items:await globalSearch(env,user,url.searchParams.get('q')||'')}); }
   if (path==='/api/security' && request.method==='GET') { if(!(can(user,'security.view')||can(user,'security.*'))) throw Object.assign(new Error('FORBIDDEN'),{status:403}); return json({ok:true,data:await collectSecurity(env,user)}); }
   if (path==='/api/data-quality' && request.method==='GET') { if(!(can(user,'dataquality.view')||can(user,'*.view'))) throw Object.assign(new Error('FORBIDDEN'),{status:403}); return json({ok:true,data:await collectDataQuality(env,user)}); }
@@ -329,11 +348,31 @@ async function api(request, env) {
   if (path==='/api/audit' && request.method==='GET') {
     if(!(can(user,'audit.view')||can(user,'audit.*'))) throw Object.assign(new Error('FORBIDDEN'),{status:403});
     const r=await safeAll(env.OPS_DB,`SELECT id,actor_email,action,target_type,target_id,metadata_json,created_at FROM ops_audit_logs ORDER BY created_at DESC LIMIT 300`);
-    return json({ok:true,items:r.data});
+    return json({ok:true,items:requireRead(r)});
   }
   if (path==='/api/reports/snapshot' && request.method==='POST') return reportSnapshot(request,env,user);
   if (path==='/api/reports/snapshots' && request.method==='GET') {
-    requireCap(user,'reports.view'); const r=await safeAll(env.OPS_DB,`SELECT id,captured_at,created_at FROM ops_kpi_snapshots ORDER BY captured_at DESC LIMIT 120`); return json({ok:true,items:r.data});
+    requireCap(user,'reports.view'); const r=await safeAll(env.OPS_DB,`SELECT id,captured_at,created_at FROM ops_kpi_snapshots WHERE ?='super_admin' OR (json_extract(payload_json,'$.generated_by')=? AND json_extract(payload_json,'$.access_fingerprint')=?) ORDER BY captured_at DESC LIMIT 120`,[user.role,user.email,accessFingerprint(user)]); return json({ok:true,items:requireRead(r)});
+  }
+  if (path.startsWith('/api/reports/snapshots/') && request.method==='GET') {
+    requireCap(user,'reports.view');
+    const row=await env.OPS_DB.prepare('SELECT * FROM ops_kpi_snapshots WHERE id=?').bind(path.split('/').pop()).first();
+    if(!row) return json({ok:false,error:'NOT_FOUND'},404);
+    const payload=JSON.parse(row.payload_json);
+    if(user.role!=='super_admin' && (payload.generated_by!==user.email || payload.access_fingerprint!==accessFingerprint(user))) return json({ok:false,error:'FORBIDDEN'},403);
+    delete payload.access_fingerprint;
+    return json({ok:true,data:payload});
+  }
+  if (path==='/api/auth/sessions' && request.method==='GET') {
+    const rows=await env.OPS_DB.prepare('SELECT id,user_agent,created_at,last_seen_at,expires_at FROM ops_sessions WHERE user_id=? AND expires_at>? ORDER BY last_seen_at DESC').bind(user.id,nowIso()).all();
+    return json({ok:true,items:rows.results.map(x=>({...x,current:x.id===user.session_id}))});
+  }
+  if (path==='/api/auth/sessions' && request.method==='DELETE') {
+    requireCsrf(request,user); const b=await readJson(request);
+    if(!b.id || b.id===user.session_id) return json({ok:false,error:'INVALID_SESSION'},400);
+    await env.OPS_DB.prepare('DELETE FROM ops_sessions WHERE user_id=? AND id=?').bind(user.id,b.id).run();
+    await audit(env,request,user,'auth.session_revoke','session',b.id);
+    return json({ok:true});
   }
   if (path==='/api/system/readiness' && request.method==='GET') {
     requireCap(user,'ops.integrations.view');
