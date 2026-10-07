@@ -17,5 +17,11 @@ export const CORE_SCHEMA_STATEMENTS = [
   "CREATE INDEX IF NOT EXISTS idx_ops_identity_key ON ops_identity_links(canonical_key);",
   "CREATE INDEX IF NOT EXISTS idx_ops_identity_email ON ops_identity_links(email_normalized);",
   "CREATE TABLE IF NOT EXISTS ops_automation_rules (\n  id TEXT PRIMARY KEY,\n  name TEXT NOT NULL,\n  enabled INTEGER NOT NULL DEFAULT 1,\n  trigger_type TEXT NOT NULL,\n  config_json TEXT NOT NULL DEFAULT '{}',\n  created_by TEXT,\n  created_at TEXT NOT NULL,\n  updated_at TEXT NOT NULL\n);",
-  "CREATE TABLE IF NOT EXISTS ops_settings (\n  key TEXT PRIMARY KEY,\n  value_json TEXT NOT NULL,\n  updated_by TEXT,\n  updated_at TEXT NOT NULL\n);"
+  "CREATE TABLE IF NOT EXISTS ops_settings (\n  key TEXT PRIMARY KEY,\n  value_json TEXT NOT NULL,\n  updated_by TEXT,\n  updated_at TEXT NOT NULL\n);",
+  "CREATE TABLE IF NOT EXISTS ops_work_items (\n  id TEXT PRIMARY KEY,\n  kind TEXT NOT NULL,\n  code TEXT,\n  title TEXT NOT NULL,\n  description TEXT,\n  status TEXT NOT NULL DEFAULT 'draft',\n  priority TEXT NOT NULL DEFAULT 'medium',\n  owner_user_id TEXT,\n  owner_name TEXT,\n  unit_name TEXT,\n  parent_id TEXT,\n  starts_at TEXT,\n  due_at TEXT,\n  progress INTEGER NOT NULL DEFAULT 0,\n  amount REAL,\n  location TEXT,\n  created_by TEXT,\n  created_at TEXT NOT NULL,\n  updated_at TEXT NOT NULL,\n  FOREIGN KEY(owner_user_id) REFERENCES ops_users(id) ON DELETE SET NULL\n);",
+  "CREATE INDEX IF NOT EXISTS idx_ops_work_kind_status ON ops_work_items(kind,status,updated_at DESC);",
+  "CREATE INDEX IF NOT EXISTS idx_ops_work_owner ON ops_work_items(owner_user_id,due_at);",
+  "CREATE INDEX IF NOT EXISTS idx_ops_work_due ON ops_work_items(due_at,status);",
+  "CREATE TABLE IF NOT EXISTS ops_work_notes (\n  id TEXT PRIMARY KEY,\n  work_item_id TEXT NOT NULL,\n  author_user_id TEXT,\n  body TEXT NOT NULL,\n  created_at TEXT NOT NULL,\n  FOREIGN KEY(work_item_id) REFERENCES ops_work_items(id) ON DELETE CASCADE\n);",
+  "CREATE INDEX IF NOT EXISTS idx_ops_work_notes_item ON ops_work_notes(work_item_id,created_at DESC);"
 ];

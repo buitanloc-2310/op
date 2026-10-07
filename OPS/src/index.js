@@ -321,6 +321,45 @@ async function scheduledSnapshot(env) {
   }
 }
 
+const WORK_KINDS = new Set(['project','task','event','document','approval','request','meeting','resource','finance','risk','report','template']);
+const WORK_STATUSES = new Set(['draft','pending','active','in_progress','waiting','approved','rejected','completed','archived']);
+const WORK_PRIORITIES = new Set(['low','medium','high','critical']);
+function clampProgress(v){const n=Number(v);return Number.isFinite(n)?Math.max(0,Math.min(100,Math.round(n))):0;}
+async function workItemsApi(request,env,user,url){
+  requireCap(user,'ops.work.view');
+  const parts=url.pathname.split('/').filter(Boolean), id=parts.length>3?parts[3]:null;
+  if(request.method==='GET'){
+    const kind=url.searchParams.get('kind'), mine=url.searchParams.get('mine')==='1', q=sanitizeText(url.searchParams.get('q')||'',120);
+    if(kind&&!WORK_KINDS.has(kind)) return json({ok:false,error:'INVALID_KIND'},400);
+    let sql=`SELECT * FROM ops_work_items WHERE 1=1`, binds=[];
+    if(kind){sql+=' AND kind=?';binds.push(kind);} if(mine){sql+=' AND (owner_user_id=? OR created_by=?)';binds.push(user.id,user.id);}
+    if(q){sql+=' AND (title LIKE ? OR description LIKE ? OR code LIKE ? OR unit_name LIKE ?)';const x=`%${q}%`;binds.push(x,x,x,x);}
+    sql+=' ORDER BY CASE priority WHEN \'critical\' THEN 0 WHEN \'high\' THEN 1 WHEN \'medium\' THEN 2 ELSE 3 END, COALESCE(due_at,\'9999\') ASC, updated_at DESC LIMIT 300';
+    const r=await env.OPS_DB.prepare(sql).bind(...binds).all(); return json({ok:true,items:r.results||[]});
+  }
+  requireCsrf(request,user); requireCap(user,'ops.work.manage'); const b=await readJson(request), now=nowIso();
+  if(request.method==='POST'){
+    const kind=String(b.kind||''); if(!WORK_KINDS.has(kind)) return json({ok:false,error:'INVALID_KIND'},400);
+    const title=sanitizeText(b.title,180); if(!title) return json({ok:false,error:'TITLE_REQUIRED'},400);
+    const status=WORK_STATUSES.has(b.status)?b.status:'draft', priority=WORK_PRIORITIES.has(b.priority)?b.priority:'medium', wid=uuid();
+    await env.OPS_DB.prepare(`INSERT INTO ops_work_items(id,kind,code,title,description,status,priority,owner_user_id,owner_name,unit_name,parent_id,starts_at,due_at,progress,amount,location,created_by,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).bind(wid,kind,sanitizeText(b.code,60)||null,title,sanitizeText(b.description,4000)||null,status,priority,b.owner_user_id||null,sanitizeText(b.owner_name,160)||null,sanitizeText(b.unit_name,160)||null,b.parent_id||null,b.starts_at||null,b.due_at||null,clampProgress(b.progress),b.amount==null?null:Number(b.amount),sanitizeText(b.location,240)||null,user.id,now,now).run();
+    await audit(env,request,user,'operations.create',kind,wid,{title}); return json({ok:true,id:wid},201);
+  }
+  if(request.method==='PATCH'&&id){
+    const row=await env.OPS_DB.prepare('SELECT * FROM ops_work_items WHERE id=?').bind(id).first(); if(!row)return json({ok:false,error:'NOT_FOUND'},404);
+    const title=sanitizeText(b.title??row.title,180); const status=WORK_STATUSES.has(b.status)?b.status:row.status, priority=WORK_PRIORITIES.has(b.priority)?b.priority:row.priority;
+    await env.OPS_DB.prepare(`UPDATE ops_work_items SET title=?,description=?,status=?,priority=?,owner_user_id=?,owner_name=?,unit_name=?,starts_at=?,due_at=?,progress=?,amount=?,location=?,updated_at=? WHERE id=?`).bind(title,sanitizeText(b.description??row.description,4000)||null,status,priority,b.owner_user_id??row.owner_user_id,sanitizeText(b.owner_name??row.owner_name,160)||null,sanitizeText(b.unit_name??row.unit_name,160)||null,b.starts_at??row.starts_at,b.due_at??row.due_at,clampProgress(b.progress??row.progress),b.amount===undefined?row.amount:(b.amount===null?null:Number(b.amount)),sanitizeText(b.location??row.location,240)||null,now,id).run();
+    await audit(env,request,user,'operations.update',row.kind,id,{status}); return json({ok:true});
+  }
+  return json({ok:false,error:'METHOD_NOT_ALLOWED'},405);
+}
+async function workSummary(env,user){
+  requireCap(user,'ops.work.view'); const now=nowIso();
+  const r=await env.OPS_DB.prepare(`SELECT kind,status,priority,due_at,owner_user_id,created_by FROM ops_work_items WHERE status!='archived'`).all(), rows=r.results||[];
+  const open=rows.filter(x=>!['completed','approved','rejected'].includes(x.status));
+  return {total:rows.length,my_work:open.filter(x=>x.owner_user_id===user.id||x.created_by===user.id).length,overdue:open.filter(x=>x.due_at&&x.due_at<now).length,pending:rows.filter(x=>x.status==='pending').length,active_projects:rows.filter(x=>x.kind==='project'&&['active','in_progress'].includes(x.status)).length,upcoming_events:open.filter(x=>x.kind==='event'&&x.due_at&&x.due_at>=now).length,critical_risks:open.filter(x=>x.kind==='risk'&&x.priority==='critical').length};
+}
+
 async function api(request, env) {
   const url=new URL(request.url), path=url.pathname;
   if (!['GET','HEAD','OPTIONS'].includes(request.method) && !requireSameOrigin(request)) return json({ok:false,error:'BAD_ORIGIN'},403);
@@ -350,6 +389,8 @@ async function api(request, env) {
   }
 
   if (path==='/api/overview' && request.method==='GET') { requireCap(user,'overview.view'); return json({ok:true,data:await collectOverview(env,user)}); }
+  if (routeMatch(path,'/api/operations/items')) return workItemsApi(request,env,user,url);
+  if (path==='/api/operations/summary' && request.method==='GET') return json({ok:true,data:await workSummary(env,user)});
   if (path==='/api/catalog' && request.method==='GET') return json({ok:true,services:SERVICES.filter(s=>visibleCatalog(user).some(x=>x.system===s.id)),modules:visibleCatalog(user)});
   if (path==='/api/services/health' && request.method==='GET') { requireCap(user,'health.view'); return json({ok:true,data:await collectHealth(user)}); }
   if (path==='/api/pending' && request.method==='GET') { requireCap(user,'overview.view'); return json({ok:true,...await collectPending(env,user)}); }
